@@ -8,9 +8,12 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@serialport/stream": "^9.0.7",
     "ant-design-vue": "^1.7.4",
     "core-js": "^3.6.5",
-    "vue": "^2.6.11"
+    "serialport-binding-webserialapi": "^1.0.3",
+    "vue": "^2.6.11",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
