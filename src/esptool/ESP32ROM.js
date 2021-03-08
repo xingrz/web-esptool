@@ -7,9 +7,22 @@ export default class ESP32ROM extends ESPLoader {
   CHIP_NAME = 'ESP32';
   IS_STUB = false;
 
+  // ESP32 uses a 4 byte status reply
+  STATUS_BYTES_LENGTH = 4;
+
   EFUSE_RD_REG_BASE = 0x3ff5a000;
 
   DR_REG_SYSCON_BASE = 0x3ff66000;
+
+  FLASH_SIZES = {
+    '1MB': 0x00,
+    '2MB': 0x10,
+    '4MB': 0x20,
+    '8MB': 0x30,
+    '16MB': 0x40,
+  };
+
+  BOOTLOADER_FLASH_OFFSET = 0x1000;
 
   async read_efuse(n) {
     return await this.read_reg(this.EFUSE_RD_REG_BASE + (4 * n));
@@ -55,6 +68,10 @@ export default class ESP32ROM extends ESPLoader {
     }
 
     return `${chip_name} (revision ${chip_revision})`;
+  }
+
+  async flash_spi_attach(hspi_arg) {
+    // TODO
   }
 
 }

@@ -56,6 +56,8 @@ export default class ESPTool extends EventEmitter {
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
 
+      await this.loader.flash_spi_attach(0);
+
       process.nextTick(() => {
         this.emit('connect', { chip_description });
       });
@@ -69,7 +71,8 @@ export default class ESPTool extends EventEmitter {
     }
   }
 
-  async flash(file) {
+  async flash(args) {
+    return await this.loader.flash(args, (progress) => this.emit('progress', progress));
   }
 
 }
