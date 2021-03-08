@@ -1,0 +1,60 @@
+import ESPLoader from './ESPLoader';
+
+export default class ESP32ROM extends ESPLoader {
+
+  static CHIP_DETECT_MAGIC_VALUE = 0x00f01d83;
+
+  CHIP_NAME = 'ESP32';
+  IS_STUB = false;
+
+  EFUSE_RD_REG_BASE = 0x3ff5a000;
+
+  DR_REG_SYSCON_BASE = 0x3ff66000;
+
+  async read_efuse(n) {
+    return await this.read_reg(this.EFUSE_RD_REG_BASE + (4 * n));
+  }
+
+  async get_pkg_version() {
+    const word3 = await this.read_efuse(3);
+    return ((word3 >> 9) & 0x07) + (((word3 >> 2) & 0x1) << 3);
+  }
+
+  async get_chip_revision() {
+    const word3 = await this.read_efuse(3);
+    const word5 = await this.read_efuse(5);
+    const apb_ctl_date = await this.read_reg(this.DR_REG_SYSCON_BASE + 0x7C);
+
+    const rev_bit0 = (word3 >> 15) & 0x1
+    const rev_bit1 = (word5 >> 20) & 0x1
+    const rev_bit2 = (apb_ctl_date >> 31) & 0x1
+
+    if (!rev_bit0) return 0;
+    if (!rev_bit1) return 1;
+    if (!rev_bit2) return 2;
+    return 3;
+  }
+
+  async get_chip_description() {
+    const pkg_version = await this.get_pkg_version();
+    const chip_revision = await this.get_chip_revision();
+    const rev3 = (chip_revision == 3);
+    const single_core = (await this.read_efuse(3)) & (1 << 0); // CHIP_VER DIS_APP_CPU
+
+    let chip_name = {
+      0: single_core ? 'ESP32-S0WDQ6' : 'ESP32-D0WDQ6',
+      1: single_core ? 'ESP32-S0WD' : 'ESP32-D0WD',
+      2: 'ESP32-D2WD',
+      4: 'ESP32-U4WDH',
+      5: rev3 ? 'ESP32-PICO-V3' : 'ESP32-PICO-D4',
+      6: 'ESP32-PICO-V3-02',
+    }[pkg_version] || 'unknown ESP32';
+
+    if (chip_name.startsWith('ESP32-D0WD') && rev3) {
+      chip_name += '-V3';
+    }
+
+    return `${chip_name} (revision ${chip_revision})`;
+  }
+
+}

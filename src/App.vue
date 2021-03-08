@@ -40,8 +40,14 @@
 
 <script>
 import ESPTool from './esptool';
+import WSABinding from 'serialport-binding-webserialapi';
 
-const esp = new ESPTool();
+function hackWSABinding() {
+  // Hack WSABinding to force it to refresh ports
+  // after the current port is closed
+  navigator.serial.getPorts = async () => ([]);
+  WSABinding.internalBasePortsList = [];
+}
 
 export default {
   name: 'App',
@@ -49,15 +55,35 @@ export default {
     file: null,
     progress: null,
     busy: false,
+    connected: false,
   }),
+  mounted() {
+    hackWSABinding();
+    this.esp = new ESPTool();
+
+    this.esp.on('connect', ({ chip_description }) => {
+      this.connected = true;
+      console.log(`Connected: ${chip_description}`);
+    });
+
+    this.esp.on('disconnect', () => {
+      this.connected = false;
+      console.log('Disconnected');
+    });
+
+    this.esp.on('progress', ({ value }) => {
+      this.progress = value;
+    });
+  },
   methods: {
     async start() {
-      if (await esp.open('wsa://default')) {
-        this.progress = 0;
-        this.busy = true;
-        await esp.flash(this.file, (i) => this.progress = i);
-        this.busy = false;
+      if (!this.connected) {
+        await this.esp.open('wsa://default');
       }
+      this.progress = 0;
+      this.busy = true;
+      await this.esp.flash(this.file);
+      this.busy = false;
     },
   },
 };
