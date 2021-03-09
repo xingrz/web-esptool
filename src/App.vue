@@ -55,19 +55,16 @@ export default {
     file: null,
     progress: null,
     busy: false,
-    connected: false,
   }),
   mounted() {
     hackWSABinding();
     this.esp = new ESPTool();
 
     this.esp.on('connect', ({ chip_description }) => {
-      this.connected = true;
       console.log(`Connected: ${chip_description}`);
     });
 
     this.esp.on('disconnect', () => {
-      this.connected = false;
       console.log('Disconnected');
     });
 
@@ -77,8 +74,11 @@ export default {
   },
   methods: {
     async start() {
-      if (!this.connected) {
+      try {
         await this.esp.open('wsa://default');
+      } catch (e) {
+        this.$message.error('设备打开失败');
+        return;
       }
       this.progress = 0;
       this.busy = true;

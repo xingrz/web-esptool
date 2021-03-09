@@ -14,7 +14,7 @@ SerialPort.Binding = WSABinding;
 export default class ESPTool extends EventEmitter {
 
   async open(path) {
-    if (this.serial) {
+    if (this.serial && this.serial.isOpen) {
       await gracefully(this.serial.close());
       this.serial = null;
       await sleep(200);
@@ -28,41 +28,45 @@ export default class ESPTool extends EventEmitter {
     this.serial.openAsync = promisify(this.serial.open.bind(this.serial));
     this.serial.closeAsync = promisify(this.serial.close.bind(this.serial));
 
-    if (await this.serial.openAsync()) {
-      console.warn('Failed opening serial');
-      this.serial = null;
-      return false;
-    }
+    try {
+      await this.serial.openAsync();
 
-    const detector = new ESPLoader(this.serial);
-    await detector.sync();
-    const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
-    for (const cls of [ESP8266ROM, ESP32ROM]) {
-      if (chip_magic_value == cls.CHIP_DETECT_MAGIC_VALUE) {
-        this.loader = new cls(this.serial);
+      const detector = new ESPLoader(this.serial);
+      await detector.sync();
+      const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
+      for (const cls of [ESP8266ROM, ESP32ROM]) {
+        if (chip_magic_value == cls.CHIP_DETECT_MAGIC_VALUE) {
+          this.loader = new cls(this.serial);
+        }
       }
-    }
-    detector.release();
+      detector.release();
 
-    if (!this.loader) {
-      console.warn('Unsupported chip');
+      if (!this.loader) {
+        console.warn('Unsupported chip');
+        await gracefully(this.serial.close());
+        this.serial = null;
+        return false;
+      }
+
+      this.serial.once('close', () => {
+        console.log('Connection closed');
+        this.emit('disconnect');
+      });
+
+      const chip_description = await this.loader.get_chip_description();
+      console.log(`Detected ${chip_description}`);
+
+      process.nextTick(() => {
+        this.emit('connect', { chip_description });
+      });
+    } catch (e) {
+      console.warn('Failed getting chip model', e);
+      if (this.serial.isOpen) {
+        await gracefully(this.serial.close());
+      }
       this.serial = null;
-      return false;
+      throw e;
     }
-
-    this.serial.once('close', () => {
-      console.log('Connection closed');
-      this.emit('disconnect');
-    });
-
-    const chip_description = await this.loader.get_chip_description();
-    console.log(`Detected ${chip_description}`);
-
-    process.nextTick(() => {
-      this.emit('connect', { chip_description });
-    });
-
-    return true;
   }
 
   async flash(file) {
