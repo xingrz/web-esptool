@@ -1,0 +1,34 @@
+name: Auto deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Build
+        run: npm install && npm run build
+
+      - uses: benjlevesque/short-sha@v1.2
+        id: short-sha
+
+      - name: Publish
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          keep_history: true
+          allow_empty_commit: false
+          build_dir: dist
+          commit_message: "Auto deploy for commit ${{ steps.short-sha.outputs.sha }}"
+          fqdn: esp.xingrz.me
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
