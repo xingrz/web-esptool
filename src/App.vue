@@ -1,39 +1,47 @@
 <template>
-  <div id="app">
-    <h1>Web ESPTool</h1>
-    <div class="author">by XiNGRZ</div>
-    <div class="main upload" v-if="progress == null">
-      <a-upload-dragger
-        accept=".zip"
-        v-bind:showUploadList="false"
-        v-bind:customRequest="({ file }) => handleFile(file)"
-        class="uploader"
-      >
-        <p class="ant-upload-drag-icon">
-          <a-icon v-bind:type="file ? 'file-zip' : 'inbox'" />
-        </p>
-        <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
-        <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
-      </a-upload-dragger>
+  <div>
+    <div id="app">
+      <h1>Web ESPTool</h1>
+      <div class="author">by XiNGRZ</div>
+      <div class="main upload" v-if="progress == null">
+        <a-upload-dragger
+          accept=".zip"
+          v-bind:showUploadList="false"
+          v-bind:customRequest="({ file }) => handleFile(file)"
+          class="uploader"
+        >
+          <p class="ant-upload-drag-icon">
+            <a-icon v-bind:type="file ? 'file-zip' : 'inbox'" />
+          </p>
+          <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
+          <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
+        </a-upload-dragger>
+      </div>
+      <div class="main progress" v-if="progress != null">
+        <a-progress
+          type="circle"
+          v-bind:width="150"
+          v-bind:strokeWidth="4"
+          v-bind:percent="progress"
+          v-bind:status="progress >= 100 ? 'success' : 'active'"
+          v-bind:format="formatProgress"
+        />
+      </div>
+      <div class="buttons">
+        <a-button
+          size="large"
+          type="primary"
+          v-bind:disabled="busy || !file"
+          v-on:click="start"
+          >开始烧录</a-button
+        >
+      </div>
     </div>
-    <div class="main progress" v-if="progress != null">
-      <a-progress
-        type="circle"
-        v-bind:width="150"
-        v-bind:strokeWidth="4"
-        v-bind:percent="progress"
-        v-bind:status="progress >= 100 ? 'success' : 'active'"
-        v-bind:format="formatProgress"
-      />
-    </div>
-    <div class="buttons">
-      <a-button
-        size="large"
-        type="primary"
-        v-bind:disabled="busy || !file"
-        v-on:click="start"
-        >开始烧录</a-button
-      >
+    <div class="footer">
+      <div>Copyright © 2021 XiNGRZ</div>
+      <div>
+        <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
+      </div>
     </div>
   </div>
 </template>
@@ -132,7 +140,8 @@ export default {
 <style>
 #app {
   width: 100vw;
-  height: 100vh;
+  height: 90vh;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -175,5 +184,11 @@ export default {
 
 #app > .buttons {
   margin-top: 40px;
+}
+
+.footer {
+  opacity: 0.5;
+  font-size: 12px;
+  text-align: center;
 }
 </style>
