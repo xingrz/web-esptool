@@ -7,7 +7,8 @@ import ESPLoader from './ESPLoader';
 import ESP8266ROM from './ESP8266ROM';
 import ESP32ROM from './ESP32ROM';
 
-import { sleep, gracefully } from './utils';
+import sleep from './utils/sleep';
+import gracefully from './utils/gracefully';
 
 SerialPort.Binding = WSABinding;
 
