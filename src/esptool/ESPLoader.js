@@ -1,6 +1,7 @@
 import { promisify } from 'util';
 import hex from './utils/hex';
 import once from './utils/once';
+import sleep from "./utils/sleep";
 
 export default class ESPLoader {
 
@@ -38,6 +39,9 @@ export default class ESPLoader {
 
     this.port = port;
     this.port.on('data', this._on_data);
+
+    this.port.writeAsync = promisify(this.port.write.bind(this.port));
+    this.port.setAsync = promisify(this.port.set.bind(this.port));
 
     this.queue = Buffer.alloc(0);
 
@@ -106,8 +110,7 @@ export default class ESPLoader {
 
     this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
 
-    const writeAsync = promisify(this.port.write.bind(this.port));
-    return await writeAsync(data);
+    return await this.port.writeAsync(data);
   }
 
   _dispatch(data) {
@@ -168,8 +171,74 @@ export default class ESPLoader {
       Buffer.from([0x07, 0x07, 0x12, 0x20]),
       Buffer.alloc(32, 0x55),
     ]);
-    const { val } = await this.command(this.ESP_SYNC, data);
+    const { val } = await this.command(this.ESP_SYNC, data, 500, 1);
     return val;
+  }
+
+  async _connect_attempt(esp32r0_delay = false) {
+    // esp32r0_delay is a workaround for bugs with the most common auto reset
+    // circuit and Windows, if the EN pin on the dev board does not have
+    // enough capacitance.
+    //
+    // Newer dev boards shouldn't have this problem (higher value capacitor
+    // on the EN pin), and ESP32 revision 1 can't use this workaround as it
+    // relies on a silicon bug.
+    //
+    // Details: https://github.com/espressif/esptool/issues/136
+
+    // IO0 = HIGH
+    // EN = LOW, chip in reset
+    await this.port.setAsync({ dtr: false, rts: true });
+
+    await sleep(100);
+    if (esp32r0_delay) {
+      // Some chips are more likely to trigger the esp32r0
+      // watchdog reset silicon bug if they're held with EN=LOW
+      // for a longer period
+      await sleep(1200);
+    }
+
+    // IO0 = LOW
+    // EN = HIGH, chip out of reset
+    await this.port.setAsync({ dtr: true, rts: false });
+
+    if (esp32r0_delay) {
+      // Sleep longer after reset.
+      // This workaround only works on revision 0 ESP32 chips,
+      // it exploits a silicon bug spurious watchdog reset.
+      await sleep(400);  // allow watchdog reset to occur
+    }
+    await sleep(50);
+
+    // IO0 = HIGH, done
+    await this.port.setAsync({ dtr: false, rts: false });
+
+    for (let i = 0; i < 5; i++) {
+      try {
+        await this.sync();
+        return true;
+      } catch (e) {
+        await sleep(50);
+      }
+    }
+
+    return false;
+  }
+
+  async connect(attempts = 7) {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        if (await this._connect_attempt(false)) {
+          return true;
+        } else if (await this._connect_attempt(true)) {
+          return true;
+        }
+      } catch (e) {
+        // ignored
+      }
+    }
+
+    return false;
   }
 
   async read_reg(addr) {

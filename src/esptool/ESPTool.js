@@ -33,7 +33,7 @@ export default class ESPTool extends EventEmitter {
       await this.serial.openAsync();
 
       const detector = new ESPLoader(this.serial);
-      await detector.sync();
+      await detector.connect();
       const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
       for (const cls of [ESP8266ROM, ESP32ROM]) {
         if (chip_magic_value == cls.CHIP_DETECT_MAGIC_VALUE) {

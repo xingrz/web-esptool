@@ -16,7 +16,7 @@ npm run serve
 
 - [x] ESP8266/ESP8285
 - [ ] ESP32 series
-- [ ] Auto program
+- [x] Auto program
 - [ ] Stub loader
 - [ ] Compression
 - [ ] Encryption
