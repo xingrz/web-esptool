@@ -1,4 +1,6 @@
 import { promisify } from 'util';
+import hex from './utils/hex';
+import once from './utils/once';
 
 export default class ESPLoader {
 
@@ -116,34 +118,13 @@ export default class ESPLoader {
     const val = data.readUInt32LE(4);
     data = data.slice(8);
 
-    this._trace(`< res op=${this._hex(op)} len=${size} val=${val} data=${data.toString('hex')}`);
+    this._trace(`< res op=${hex(op)} len=${size} val=${val} data=${data.toString('hex')}`);
 
     this.port.emit(`res:${op}`, { val, data });
   }
 
-  _wait(evt, timeout) {
-    return new Promise((resolve, reject) => {
-      let timer, succeed, ongoing = true;
-      succeed = (ret) => {
-        if (ongoing) {
-          ongoing = false;
-          clearTimeout(timer);
-          resolve(ret);
-        }
-      };
-      timer = setTimeout(() => {
-        if (ongoing) {
-          ongoing = false;
-          this.port.removeListener(evt, succeed);
-          reject(new Error('Timeout'));
-        }
-      }, timeout);
-      this.port.once(evt, succeed);
-    });
-  }
-
   async command(op, data, chk = 0, timeout = 500, tries = 5) {
-    this._trace(`> req op=${this._hex(op)} len=${data.length} data=${data.toString('hex')}`);
+    this._trace(`> req op=${hex(op)} len=${data.length} data=${data.toString('hex')}`);
 
     const hdr = Buffer.alloc(8);
     hdr[0] = 0x00;
@@ -154,7 +135,7 @@ export default class ESPLoader {
     for (let i = 0; i < tries; i++) {
       try {
         this._write(out);
-        return await this._wait(`res:${op}`, timeout);
+        return await once(this.port, `res:${op}`, timeout);
       } catch (e) {
         // ignored
       }
@@ -297,11 +278,11 @@ export default class ESPLoader {
   async flash(args, onProgress) {
     for (let i = 0; i < args.partitions.length; i++) {
       let { address, image } = args.partitions[i];
-      console.log(`Part ${i}: address=${this._hex(address, 4)} size=${image.length}`);
+      console.log(`Part ${i}: address=${hex(address, 4)} size=${image.length}`);
 
       image = this._pad_image(image, 4);
       if (image.length == 0) {
-        console.warn(`Skipped empty part ${i} address=${this._hex(address, 4)}`);
+        console.warn(`Skipped empty part ${i} address=${hex(address, 4)}`);
         continue;
       }
 
@@ -312,7 +293,7 @@ export default class ESPLoader {
       let seq = 0;
       let written = 0;
       while (image.length > 0) {
-        console.log(`Writing at ${this._hex(address + seq * this.FLASH_WRITE_SIZE, 4)}... (${Math.round((seq + 1) / blocks * 100)}%)`);
+        console.log(`Writing at ${hex(address + seq * this.FLASH_WRITE_SIZE, 4)}... (${Math.round((seq + 1) / blocks * 100)}%)`);
         const block = image.slice(0, this.FLASH_WRITE_SIZE);
         await this.flash_block(block, seq);
         image = image.slice(this.FLASH_WRITE_SIZE);
@@ -323,10 +304,6 @@ export default class ESPLoader {
 
       console.log(`Wrote ${written} bytes`);
     }
-  }
-
-  _hex(v, bytes = 1) {
-    return `0x${v.toString(16).padStart(bytes * 2, '0')}`;
   }
 
 }
