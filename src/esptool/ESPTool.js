@@ -57,6 +57,12 @@ export default class ESPTool extends EventEmitter {
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
 
+      if (this.loader.STUB_CODE) {
+        const stub = await this.loader.run_stub();
+        this.loader.release();
+        this.loader = stub;
+      }
+
       await this.loader.flash_spi_attach(0);
 
       process.nextTick(() => {

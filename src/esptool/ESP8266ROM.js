@@ -1,4 +1,5 @@
 import ESPLoader from './ESPLoader';
+import ESP8266Stub from './stubs/ESP8266Stub';
 
 export default class ESP8266ROM extends ESPLoader {
 
@@ -20,6 +21,9 @@ export default class ESP8266ROM extends ESPLoader {
   };
 
   BOOTLOADER_FLASH_OFFSET = 0;
+
+  STUB_CLASS = ESP8266StubLoader;
+  STUB_CODE = ESP8266Stub;
 
   async get_efuses() {
     return [
@@ -88,6 +92,17 @@ export default class ESP8266ROM extends ESPLoader {
 
   async flash_spi_attach() {
     await this.flash_begin(0, 0);
+  }
+
+}
+
+class ESP8266StubLoader extends ESP8266ROM {
+
+  FLASH_WRITE_SIZE = 0x4000;  // matches MAX_WRITE_BLOCK in stub_loader.c
+  IS_STUB = true;
+
+  get_erase_size(offset, size) {
+    return size;  // stub doesn't have same size bug as ROM loader
   }
 
 }

@@ -1,7 +1,10 @@
 import { promisify } from 'util';
+import { unzip } from 'zlib';
 import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
+
+const unzipAsync = promisify(unzip);
 
 export default class ESPLoader {
 
@@ -17,8 +20,14 @@ export default class ESPLoader {
   ESP_FLASH_BEGIN = 0x02;
   ESP_FLASH_DATA = 0x03;
   ESP_FLASH_END = 0x04;
+  ESP_MEM_BEGIN = 0x05;
+  ESP_MEM_END = 0x06;
+  ESP_MEM_DATA = 0x07;
   ESP_SYNC = 0x08;
   ESP_READ_REG = 0x0A;
+
+  // Maximum block sized for RAM and Flash writes, respectively.
+  ESP_RAM_BLOCK = 0x1800;
 
   FLASH_WRITE_SIZE = 0x400;
 
@@ -264,6 +273,34 @@ export default class ESPLoader {
     return state;
   }
 
+  async mem_begin(size, blocks, blocksize, offset) {
+    const data = Buffer.alloc(16);
+    data.writeUInt32LE(size, 0);
+    data.writeUInt32LE(blocks, 4);
+    data.writeUInt32LE(blocksize, 8);
+    data.writeUInt32LE(offset, 12);
+
+    return this.check(await this.command(this.ESP_MEM_BEGIN, data, 0, 5000, 1));
+  }
+
+  async mem_block(data, seq) {
+    const hdr = Buffer.alloc(16);
+    hdr.writeUInt32LE(data.length, 0);
+    hdr.writeUInt32LE(seq, 4);
+    hdr.writeUInt32LE(0, 8);
+    hdr.writeUInt32LE(0, 12);
+
+    const buf = Buffer.concat([hdr, data]);
+    return this.check(await this.command(this.ESP_MEM_DATA, buf, this._checksum(data), 5000, 1));
+  }
+
+  async mem_finish(entrypoint = 0) {
+    const data = Buffer.alloc(8);
+    data.writeUInt32LE(entrypoint == 0, 0);
+    data.writeUInt32LE(entrypoint, 4);
+    this.check(await this.command(this.ESP_MEM_END, data, 0, 50, 1));
+  }
+
   async flash_begin(size, offset) {
     const num_blocks = Math.floor((size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
     const erase_size = this.get_erase_size(offset, size);
@@ -305,6 +342,31 @@ export default class ESPLoader {
       const sizes = Object.keys(this.loader.FLASH_SIZES).join(', ');
       throw new Error(`Flash size '${arg}' is not supported by this chip type. Supported sizes: ${sizes}`);
     }
+  }
+
+  async run_stub() {
+    const stub = this.STUB_CODE;
+
+    console.log('Uploading stub...');
+    for (const field of ['text', 'data']) {
+      if (!stub[field]) continue;
+      const offs = stub[`${field}_start`];
+      const code = await unzipAsync(Buffer.from(stub[field], 'base64'));
+      const blocks = Math.floor((code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK);
+      await this.mem_begin(code.length, blocks, this.ESP_RAM_BLOCK, offs);
+      for (let seq = 0; seq < blocks; seq++) {
+        const from_offs = seq * this.ESP_RAM_BLOCK;
+        const to_offs = from_offs + this.ESP_RAM_BLOCK;
+        await this.mem_block(code.slice(from_offs, to_offs), seq);
+      }
+    }
+
+    console.log('Running stub...');
+    await this.mem_finish(stub['entry']);
+    await sleep(500);
+
+    console.log('Stub running...');
+    return new this.STUB_CLASS(this.port);
   }
 
   _update_image_flash_params(address, args, image) {
