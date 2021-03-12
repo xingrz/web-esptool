@@ -1,4 +1,5 @@
 import ESPLoader from './ESPLoader';
+import ESP32Stub from './stubs/ESP32Stub';
 
 export default class ESP32ROM extends ESPLoader {
 
@@ -23,6 +24,9 @@ export default class ESP32ROM extends ESPLoader {
   };
 
   BOOTLOADER_FLASH_OFFSET = 0x1000;
+
+  STUB_CLASS = ESP32StubLoader;
+  STUB_CODE = ESP32Stub;
 
   async read_efuse(n) {
     return await this.read_reg(this.EFUSE_RD_REG_BASE + (4 * n));
@@ -71,7 +75,24 @@ export default class ESP32ROM extends ESPLoader {
   }
 
   async flash_spi_attach(hspi_arg) {
-    // TODO
+    const data = Buffer.alloc(8);
+    data.writeUInt32LE(hspi_arg, 0);
+    data.writeUInt32LE(0, 4);
+    this.check(await this.command(this.ESP_SPI_ATTACH, data));
+  }
+
+}
+
+class ESP32StubLoader extends ESP32ROM {
+
+  FLASH_WRITE_SIZE = 0x4000;  // matches MAX_WRITE_BLOCK in stub_loader.c
+  STATUS_BYTES_LENGTH = 2;  // same as ESP8266, different to ESP32 ROM
+  IS_STUB = true;
+
+  async flash_spi_attach(hspi_arg) {
+    const data = Buffer.alloc(4);
+    data.writeUInt32LE(hspi_arg, 0);
+    this.check(await this.command(this.ESP_SPI_ATTACH, data));
   }
 
 }

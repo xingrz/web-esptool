@@ -26,6 +26,9 @@ export default class ESPLoader {
   ESP_SYNC = 0x08;
   ESP_READ_REG = 0x0A;
 
+  // Some comands supported by ESP32 ROM bootloader(or -8266 w / stub)
+  ESP_SPI_ATTACH = 0x0D;
+
   // Maximum block sized for RAM and Flash writes, respectively.
   ESP_RAM_BLOCK = 0x1800;
 
