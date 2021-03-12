@@ -21,15 +21,50 @@ export default class ESP8266ROM extends ESPLoader {
 
   BOOTLOADER_FLASH_OFFSET = 0;
 
+  async get_efuses() {
+    return [
+      await this.read_reg(0x3ff00050),
+      await this.read_reg(0x3ff00054),
+      await this.read_reg(0x3ff00058),
+      await this.read_reg(0x3ff0005c),
+    ];
+  }
+
+  _get_flash_size(efuses) {
+    const r0_4 = efuses[0] & (1 << 4);
+    const r3_25 = efuses[3] & (1 << 25);
+    const r3_26 = efuses[3] & (1 << 26);
+    const r3_27 = efuses[3] & (1 << 27);
+
+    if (r0_4 && !r3_25) {
+      if (!r3_27 && !r3_26) {
+        return 1;
+      } else if (!r3_27 && r3_26) {
+        return 2;
+      }
+    }
+    if (!r0_4 && r3_25) {
+      if (!r3_27 && !r3_26) {
+        return 2;
+      } else if (!r3_27 && r3_26) {
+        return 4;
+      }
+    }
+    return -1;
+  }
+
   async get_chip_description() {
-    const id0 = await this.read_reg(0x3ff00050);
-    const id1 = await this.read_reg(0x3ff00054);
-    const id2 = await this.read_reg(0x3ff00058);
-    const id3 = await this.read_reg(0x3ff0005c);
-    if ((id0 & (1 << 4)) || (id2 & (1 << 16))) {
-      return "ESP8285";
+    const efuses = await this.get_efuses();
+    if ((efuses[0] & (1 << 4)) || (efuses[2] & (1 << 16))) {
+      const flash_size = this._get_flash_size(efuses);
+      const max_temp = efuses[0] & (1 << 5);
+      const chip_name = {
+        1: max_temp ? 'ESP8285H08' : 'ESP8285N08',
+        2: max_temp ? 'ESP8285H16' : 'ESP8285N16',
+      }[flash_size] || 'ESP8285';
+      return chip_name;
     } else {
-      return "ESP8266EX";
+      return 'ESP8266EX';
     }
   }
 

@@ -1,7 +1,7 @@
 import { promisify } from 'util';
 import hex from './utils/hex';
 import once from './utils/once';
-import sleep from "./utils/sleep";
+import sleep from './utils/sleep';
 
 export default class ESPLoader {
 
