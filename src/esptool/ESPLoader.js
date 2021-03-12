@@ -288,8 +288,6 @@ export default class ESPLoader {
 
     const buf = Buffer.concat([hdr, data]);
     this.check(await this.command(this.ESP_FLASH_DATA, buf, this._checksum(data), 5000, 1));
-
-    return true;
   }
 
   _pad_image(data, alignment, pad_character = 0xFF) {
@@ -301,10 +299,10 @@ export default class ESPLoader {
   }
 
   _parse_flash_size_arg(arg) {
-    if (self.loader.FLASH_SIZES[arg]) {
-      return self.loader.FLASH_SIZES[arg];
+    if (this.loader.FLASH_SIZES[arg]) {
+      return this.loader.FLASH_SIZES[arg];
     } else {
-      const sizes = Object.keys(self.loader.FLASH_SIZES).join(', ');
+      const sizes = Object.keys(this.loader.FLASH_SIZES).join(', ');
       throw new Error(`Flash size '${arg}' is not supported by this chip type. Supported sizes: ${sizes}`);
     }
   }
