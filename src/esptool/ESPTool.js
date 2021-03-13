@@ -56,6 +56,7 @@ export default class ESPTool extends EventEmitter {
 
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
+      this.emit('connect', { chip_description });
 
       if (this.loader.STUB_CODE) {
         const stub = await this.loader.run_stub();
@@ -64,10 +65,6 @@ export default class ESPTool extends EventEmitter {
       }
 
       await this.loader.flash_spi_attach(0);
-
-      process.nextTick(() => {
-        this.emit('connect', { chip_description });
-      });
     } catch (e) {
       console.warn('Failed getting chip model', e);
       if (this.serial.isOpen) {
