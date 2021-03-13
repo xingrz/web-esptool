@@ -14,10 +14,13 @@ npm run serve
 
 ## Features / TODOs
 
-- [x] ESP8266/ESP8285
-- [ ] ESP32 series
 - [x] Auto program
-- [ ] Stub loader
+- [x] Stub loader
+- [x] ESP8266/ESP8285
+- [x] ESP32
+- [ ] ESP32-S2
+- [ ] ESP32-S3(beta2)
+- [ ] ESP32-C3
 - [ ] Compression
 - [ ] Encryption
 
