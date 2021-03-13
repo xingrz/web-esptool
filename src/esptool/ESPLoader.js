@@ -330,6 +330,12 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_DATA, buf, this._checksum(data), 5000, 1));
   }
 
+  async flash_finish(reboot = false) {
+    const data = Buffer.alloc(4);
+    data.writeUInt32LE(reboot ? 0 : 1, 0);
+    this.check(await this.command(this.ESP_FLASH_END, data));
+  }
+
   _pad_image(data, alignment, pad_character = 0xFF) {
     const pad_mod = data.length % alignment;
     if (pad_mod != 0) {
@@ -434,7 +440,22 @@ export default class ESPLoader {
         onProgress({ index: i, blocks_written: seq + 1, blocks_total: blocks });
       }
 
+      if (this.IS_STUB) {
+        // Stub only writes each block to flash after 'ack'ing the receive, so do a final dummy operation which will
+        // not be 'ack'ed until the last block has actually been written out to flash
+        await this.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
+      }
+
       console.log(`Wrote ${written} bytes`);
+    }
+
+    console.log('Leaving...');
+
+    if (this.IS_STUB) {
+      // skip sending flash_finish to ROM loader here,
+      // as it causes the loader to exit and run user code
+      await this.flash_begin(0, 0);
+      await this.flash_finish(false);
     }
   }
 
