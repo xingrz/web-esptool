@@ -459,4 +459,10 @@ export default class ESPLoader {
     }
   }
 
+  async hard_reset() {
+    await this.port.setAsync({ dtr: true, rts: false });  // EN->LOW
+    await sleep(100);
+    await this.port.setAsync({ dtr: false, rts: false });
+  }
+
 }

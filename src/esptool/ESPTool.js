@@ -76,7 +76,8 @@ export default class ESPTool extends EventEmitter {
   }
 
   async flash(args) {
-    return await this.loader.flash(args, (progress) => this.emit('progress', progress));
+    await this.loader.flash(args, (progress) => this.emit('progress', progress));
+    await this.loader.hard_reset();
   }
 
 }
