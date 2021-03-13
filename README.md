@@ -3,7 +3,7 @@
 
 [![license][license-img]][license-url] [![issues][issues-img]][issues-url] [![commits][commits-img]][commits-url]
 
-Flash Espress chips on your web browser!
+Flash Espressif chips on your web browser!
 
 ## Development
 
