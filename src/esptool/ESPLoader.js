@@ -4,6 +4,7 @@ import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
 import pack from './utils/pack';
+import unpack from './utils/unpack';
 
 const unzipAsync = promisify(unzip);
 
@@ -69,35 +70,10 @@ export default class ESPLoader {
 
   _on_data(data) {
     this._trace(`Read ${data.length} bytes: ${data.toString('hex')}`);
-
-    this.queue = Buffer.concat([this.queue, data]);
-
-    let parts = null;
-    let lastIndex = 0;
-    for (let i = 0; i < this.queue.length; i++) {
-      if (this.queue[i] == 0xC0) {
-        if (parts == null) {
-          parts = [];
-          lastIndex = i + 1;
-        } else {
-          if (lastIndex < i) {
-            parts.push(this.queue.slice(lastIndex, i));
-          }
-          this._dispatch(Buffer.concat(parts));
-          parts = null;
-          this.queue = this.queue.slice(i + 1);
-        }
-      } else if (i < this.queue.length - 1) {
-        const bh = this.queue[i];
-        const bl = this.queue[i + 1];
-        if (bh == 0xDB && bl == 0xDC) {
-          parts.push(this.queue.slice(lastIndex, i));
-          parts.push(Buffer.from([0xC0]));
-        } else if (bh == 0xDB && bl == 0xDD) {
-          parts.push(this.queue.slice(lastIndex, i));
-          parts.push(Buffer.from([0xDB]));
-        }
-      }
+    const { queue, packets } = unpack(this.queue, data);
+    this.queue = queue;
+    for (const packet of packets) {
+      this._dispatch(packet);
     }
   }
 
