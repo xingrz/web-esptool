@@ -30,6 +30,7 @@ export default class ESPLoader {
 
   // Some comands supported by ESP32 ROM bootloader(or -8266 w / stub)
   ESP_SPI_ATTACH = 0x0D;
+  ESP_CHANGE_BAUDRATE = 0x0F;
 
   // Maximum block sized for RAM and Flash writes, respectively.
   ESP_RAM_BLOCK = 0x1800;
@@ -56,6 +57,7 @@ export default class ESPLoader {
 
     this.port.writeAsync = promisify(this.port.write.bind(this.port));
     this.port.setAsync = promisify(this.port.set.bind(this.port));
+    this.port.updateAsync = promisify(this.port.update.bind(this.port));
 
     this.queue = Buffer.alloc(0);
 
@@ -334,6 +336,17 @@ export default class ESPLoader {
 
     console.log('Stub running...');
     return new this.STUB_CLASS(this.port);
+  }
+
+  async change_baud(baud) {
+    console.log(`Changing baud rate to ${baud}`);
+    const data = Buffer.alloc(8);
+    data.writeUInt32LE(baud, 0);
+    data.writeUInt32LE(this.IS_STUB ? this.port.baudRate : 0, 4);  // stub takes the new baud rate and the old one
+    await this.command(this.ESP_CHANGE_BAUDRATE, data);
+    console.log('Changed.');
+    await this.port.updateAsync({ baudRate: baud });
+    await sleep(50);  // get rid of crap sent during baud rate change
   }
 
   _update_image_flash_params(address, args, image) {
