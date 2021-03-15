@@ -143,7 +143,7 @@ export default class ESPLoader {
       Buffer.from([0x07, 0x07, 0x12, 0x20]),
       Buffer.alloc(32, 0x55),
     ]);
-    const { val } = await this.command(this.ESP_SYNC, data, 500, 1);
+    const { val } = await this.command(this.ESP_SYNC, data);
     return val;
   }
 
