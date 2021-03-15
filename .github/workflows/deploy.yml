@@ -15,8 +15,14 @@ jobs:
         with:
           node-version: '14'
 
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
       - name: Build
-        run: npm install && npm run build
+        run: npm run build
 
       - uses: benjlevesque/short-sha@v1.2
         id: short-sha
