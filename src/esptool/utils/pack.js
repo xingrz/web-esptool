@@ -1,20 +1,21 @@
 export default function pack(data) {
-  const parts = [Buffer.from([0xC0])];
-  let lastIndex = 0;
-  for (let i = 0; i < data.length; i++) {
-    if (data[i] == 0xC0) {
-      parts.push(data.slice(lastIndex, i));
-      parts.push(Buffer.from([0xDB, 0xDC]));
-      lastIndex = i + 1;
-    } else if (data[i] == 0xDB) {
-      parts.push(data.slice(lastIndex, i));
-      parts.push(Buffer.from([0xDB, 0xDD]));
-      lastIndex = i + 1;
+  const out = Buffer.alloc(data.length * 2 + 2);
+  out[0] = 0xC0;
+  let oi = 1;
+  for (let di = 0; di < data.length; di++) {
+    if (data[di] == 0xC0) {
+      out[oi] = 0xDB;
+      out[oi + 1] = 0xDC;
+      oi += 2;
+    } else if (data[di] == 0xDB) {
+      out[oi] = 0xDB;
+      out[oi + 1] = 0xDD;
+      oi += 2;
+    } else {
+      out[oi] = data[di];
+      oi += 1;
     }
   }
-  if (lastIndex < data.length) {
-    parts.push(data.slice(lastIndex, data.length));
-  }
-  parts.push(Buffer.from([0xC0]));
-  return Buffer.concat(parts);
+  out[oi] = 0xC0;
+  return out.slice(0, oi + 1);
 }
