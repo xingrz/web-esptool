@@ -3,6 +3,7 @@ import { unzip } from 'zlib';
 import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
+import pack from './utils/pack';
 
 const unzipAsync = promisify(unzip);
 
@@ -101,27 +102,8 @@ export default class ESPLoader {
   }
 
   async _write(data) {
-    const parts = [Buffer.from([0xC0])];
-    let lastIndex = 0;
-    for (let i = 0; i < data.length; i++) {
-      if (data[i] == 0xC0) {
-        parts.push(data.slice(lastIndex, i));
-        parts.push(Buffer.from([0xDB, 0xDC]));
-        lastIndex = i + 1;
-      } else if (data[i] == 0xDB) {
-        parts.push(data.slice(lastIndex, i));
-        parts.push(Buffer.from([0xDB, 0xDD]));
-        lastIndex = i + 1;
-      }
-    }
-    if (lastIndex < data.length) {
-      parts.push(data.slice(lastIndex, data.length));
-    }
-    parts.push(Buffer.from([0xC0]));
-    data = Buffer.concat(parts);
-
+    data = pack(data);
     this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
-
     return await this.port.writeAsync(data);
   }
 
