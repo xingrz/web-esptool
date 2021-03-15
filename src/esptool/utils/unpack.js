@@ -1,35 +1,42 @@
 export default function unpack(queue, data) {
-  const packets = [];
-
   queue = Buffer.concat([queue, data]);
-
-  let parts = null;
-  let lastIndex = 0;
-  for (let i = 0; i < queue.length; i++) {
-    if (queue[i] == 0xC0) {
-      if (parts == null) {
-        parts = [];
-        lastIndex = i + 1;
-      } else {
-        if (lastIndex < i) {
-          parts.push(queue.slice(lastIndex, i));
-        }
-        packets.push(Buffer.concat(parts));
-        parts = null;
-        queue = queue.slice(i + 1);
+  const packets = [];
+  let pi = 0, qi = 0;
+  let packet = null;
+  while (qi < queue.length) {
+    if (queue[qi] == 0xC0) {
+      if (packet == null) {  // start
+        packet = Buffer.alloc(queue.length);
+      } else {  // end
+        packets.push(packet.slice(0, pi));
+        packet = null;
+        pi = 0;
       }
-    } else if (i < queue.length - 1) {
-      const bh = queue[i];
-      const bl = queue[i + 1];
-      if (bh == 0xDB && bl == 0xDC) {
-        parts.push(queue.slice(lastIndex, i));
-        parts.push(Buffer.from([0xC0]));
-      } else if (bh == 0xDB && bl == 0xDD) {
-        parts.push(queue.slice(lastIndex, i));
-        parts.push(Buffer.from([0xDB]));
+      qi += 1;
+    } else if (qi < queue.length - 1 && queue[qi] == 0xDB && queue[qi + 1] == 0xDC) {
+      if (packet != null) {
+        packet[pi] = 0xC0;
+        pi += 1;
       }
+      qi += 2;
+    } else if (qi < queue.length - 1 && queue[qi] == 0xDB && queue[qi + 1] == 0xDD) {
+      if (packet != null) {
+        packet[pi] = 0xDB;
+        pi += 1;
+      }
+      qi += 2;
+    } else {
+      if (packet != null) {
+        packet[pi] = queue[qi];
+        pi += 1;
+      }
+      qi += 1;
     }
   }
-
-  return { queue, packets };
+  if (packet != null) {
+    packet = Buffer.concat([Buffer.from([0xC0]), packet.slice(0, pi)]);
+  } else {
+    packet = Buffer.alloc(0);
+  }
+  return { queue: packet, packets };
 }
