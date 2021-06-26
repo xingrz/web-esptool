@@ -1,12 +1,34 @@
 import { promisify } from 'util';
 import { unzip } from 'zlib';
+import SerialPort from '@serialport/stream';
 import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
 import pack from './utils/pack';
 import unpack from './utils/unpack';
+import { set, update } from './utils/serial';
+import { IFlashArgs } from './';
 
 const unzipAsync = promisify(unzip);
+
+interface IResponse {
+  val: number;
+  data: Buffer;
+}
+
+export interface IStub {
+  text: string;
+  text_start: number;
+  entry: number;
+  data: string;
+  data_start: number;
+}
+
+export interface IFlashProgress {
+  index: number;
+  blocks_written: number;
+  blocks_total: number;
+}
 
 export default class ESPLoader {
 
@@ -47,17 +69,24 @@ export default class ESPLoader {
   FLASH_SECTOR_SIZE = 0x1000;
 
   // The number of bytes in the UART response that signify command status
-  STATUS_BYTES_LENGTH = 2
+  STATUS_BYTES_LENGTH = 2;
 
-  constructor(port) {
+  BOOTLOADER_FLASH_OFFSET = 0;
+  FLASH_SIZES: Record<string, number> = {};
+
+  port: SerialPort;
+  queue: Buffer;
+
+  STUB_CODE?: IStub;
+  STUB_CLASS?: { new(port: SerialPort): ESPLoader };
+
+  private _trace: (text?: string) => void;
+
+  constructor(port: SerialPort) {
     this._on_data = this._on_data.bind(this);
 
     this.port = port;
     this.port.on('data', this._on_data);
-
-    this.port.writeAsync = promisify(this.port.write.bind(this.port));
-    this.port.setAsync = promisify(this.port.set.bind(this.port));
-    this.port.updateAsync = promisify(this.port.update.bind(this.port));
 
     this.queue = Buffer.alloc(0);
 
@@ -66,11 +95,11 @@ export default class ESPLoader {
       : () => null;
   }
 
-  release() {
+  release(): void {
     this.port.removeListener('data', this._on_data);
   }
 
-  _on_data(data) {
+  _on_data(data: Buffer): void {
     this._trace(`Read ${data.length} bytes: ${data.toString('hex')}`);
     const { queue, packets } = unpack(this.queue, data);
     this.queue = queue;
@@ -79,13 +108,13 @@ export default class ESPLoader {
     }
   }
 
-  async _write(data) {
+  _write(data: Buffer): void {
     data = pack(data);
     this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
-    return await this.port.writeAsync(data);
+    this.port.write(data);
   }
 
-  _dispatch(data) {
+  _dispatch(data: Buffer): void {
     if (data.length < 8) return;
     if (data[0] != 0x01) return;
     const op = data[1];
@@ -95,10 +124,10 @@ export default class ESPLoader {
 
     this._trace(`< res op=${hex(op)} len=${size} val=${val} data=${data.toString('hex')}`);
 
-    this.port.emit(`res:${op}`, { val, data });
+    this.port.emit(`res:${op}`, { val, data } as IResponse);
   }
 
-  async command(op, data, chk = 0, timeout = 500, tries = 5) {
+  async command(op: number, data: Buffer, chk = 0, timeout = 500, tries = 5): Promise<IResponse> {
     this._trace(`> req op=${hex(op)} len=${data.length} data=${data.toString('hex')}`);
 
     const hdr = Buffer.alloc(8);
@@ -110,7 +139,7 @@ export default class ESPLoader {
     for (let i = 0; i < tries; i++) {
       try {
         this._write(out);
-        return await once(this.port, `res:${op}`, timeout);
+        return await once(this.port, `res:${op}`, timeout) as IResponse;
       } catch (e) {
         // ignored
       }
@@ -118,7 +147,7 @@ export default class ESPLoader {
     throw new Error('Timeout waiting for command response');
   }
 
-  check({ val, data }) {
+  check({ val, data }: IResponse): number | Buffer {
     if (data.length < this.STATUS_BYTES_LENGTH) {
       throw new Error(`Only got ${data.length} byte status response.`);
     }
@@ -138,7 +167,7 @@ export default class ESPLoader {
     }
   }
 
-  async sync() {
+  async sync(): Promise<number> {
     const data = Buffer.concat([
       Buffer.from([0x07, 0x07, 0x12, 0x20]),
       Buffer.alloc(32, 0x55),
@@ -147,7 +176,7 @@ export default class ESPLoader {
     return val;
   }
 
-  async _connect_attempt(esp32r0_delay = false) {
+  async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
     // esp32r0_delay is a workaround for bugs with the most common auto reset
     // circuit and Windows, if the EN pin on the dev board does not have
     // enough capacitance.
@@ -160,7 +189,7 @@ export default class ESPLoader {
 
     // IO0 = HIGH
     // EN = LOW, chip in reset
-    await this.port.setAsync({ dtr: false, rts: true });
+    await set(this.port, { dtr: false, rts: true });
 
     await sleep(100);
     if (esp32r0_delay) {
@@ -172,7 +201,7 @@ export default class ESPLoader {
 
     // IO0 = LOW
     // EN = HIGH, chip out of reset
-    await this.port.setAsync({ dtr: true, rts: false });
+    await set(this.port, { dtr: true, rts: false });
 
     if (esp32r0_delay) {
       // Sleep longer after reset.
@@ -183,7 +212,7 @@ export default class ESPLoader {
     await sleep(50);
 
     // IO0 = HIGH, done
-    await this.port.setAsync({ dtr: false, rts: false });
+    await set(this.port, { dtr: false, rts: false });
 
     for (let i = 0; i < 5; i++) {
       try {
@@ -197,7 +226,7 @@ export default class ESPLoader {
     return false;
   }
 
-  async connect(attempts = 7) {
+  async connect(attempts = 7): Promise<boolean> {
     for (let i = 0; i < attempts; i++) {
       try {
         if (await this._connect_attempt(false)) {
@@ -213,22 +242,27 @@ export default class ESPLoader {
     return false;
   }
 
-  async read_reg(addr) {
+  async read_reg(addr: number): Promise<number> {
     const data = Buffer.alloc(4);
     data.writeUInt32LE(addr, 0);
     const { val } = await this.command(this.ESP_READ_REG, data);
     return val;
   }
 
-  get_chip_description() {
+  async get_chip_description(): Promise<string> {
     throw new Error('Not supported');
   }
 
-  get_erase_size(offset, size) {
+  get_erase_size(offset: number, size: number): number {
     return size;
   }
 
-  _checksum(data) {
+  async flash_spi_attach(hspi_arg: number): Promise<void> {
+    hspi_arg;
+    throw new Error('Not supported');
+  }
+
+  _checksum(data: Buffer): number {
     let state = this.ESP_CHECKSUM_MAGIC;
     for (const b of data) {
       state ^= b;
@@ -236,17 +270,17 @@ export default class ESPLoader {
     return state;
   }
 
-  async mem_begin(size, blocks, blocksize, offset) {
+  async mem_begin(size: number, blocks: number, blocksize: number, offset: number): Promise<void> {
     const data = Buffer.alloc(16);
     data.writeUInt32LE(size, 0);
     data.writeUInt32LE(blocks, 4);
     data.writeUInt32LE(blocksize, 8);
     data.writeUInt32LE(offset, 12);
 
-    return this.check(await this.command(this.ESP_MEM_BEGIN, data, 0, 5000, 1));
+    this.check(await this.command(this.ESP_MEM_BEGIN, data, 0, 5000, 1));
   }
 
-  async mem_block(data, seq) {
+  async mem_block(data: Buffer, seq: number): Promise<void> {
     const hdr = Buffer.alloc(16);
     hdr.writeUInt32LE(data.length, 0);
     hdr.writeUInt32LE(seq, 4);
@@ -254,17 +288,17 @@ export default class ESPLoader {
     hdr.writeUInt32LE(0, 12);
 
     const buf = Buffer.concat([hdr, data]);
-    return this.check(await this.command(this.ESP_MEM_DATA, buf, this._checksum(data), 5000, 1));
+    this.check(await this.command(this.ESP_MEM_DATA, buf, this._checksum(data), 5000, 1));
   }
 
-  async mem_finish(entrypoint = 0) {
+  async mem_finish(entrypoint = 0): Promise<void> {
     const data = Buffer.alloc(8);
-    data.writeUInt32LE(entrypoint == 0, 0);
+    data.writeUInt32LE(entrypoint == 0 ? 1 : 0, 0);
     data.writeUInt32LE(entrypoint, 4);
     this.check(await this.command(this.ESP_MEM_END, data, 0, 50, 1));
   }
 
-  async flash_begin(size, offset) {
+  async flash_begin(size: number, offset: number): Promise<number> {
     const num_blocks = Math.floor((size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
     const erase_size = this.get_erase_size(offset, size);
 
@@ -279,7 +313,7 @@ export default class ESPLoader {
     return num_blocks;
   }
 
-  async flash_block(data, seq) {
+  async flash_block(data: Buffer, seq: number): Promise<void> {
     const hdr = Buffer.alloc(16);
     hdr.writeUInt32LE(data.length, 0);
     hdr.writeUInt32LE(seq, 4);
@@ -290,13 +324,13 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_DATA, buf, this._checksum(data), 5000, 1));
   }
 
-  async flash_finish(reboot = false) {
+  async flash_finish(reboot = false): Promise<void> {
     const data = Buffer.alloc(4);
     data.writeUInt32LE(reboot ? 0 : 1, 0);
     this.check(await this.command(this.ESP_FLASH_END, data));
   }
 
-  _pad_image(data, alignment, pad_character = 0xFF) {
+  _pad_image(data: Buffer, alignment: number, pad_character = 0xFF): Buffer {
     const pad_mod = data.length % alignment;
     if (pad_mod != 0) {
       data = Buffer.concat([data, Buffer.alloc(pad_mod, pad_character)]);
@@ -304,23 +338,23 @@ export default class ESPLoader {
     return data;
   }
 
-  _parse_flash_size_arg(arg) {
-    if (this.loader.FLASH_SIZES[arg]) {
-      return this.loader.FLASH_SIZES[arg];
+  _parse_flash_size_arg(arg: string): number {
+    if (this.FLASH_SIZES[arg]) {
+      return this.FLASH_SIZES[arg];
     } else {
-      const sizes = Object.keys(this.loader.FLASH_SIZES).join(', ');
+      const sizes = Object.keys(this.FLASH_SIZES).join(', ');
       throw new Error(`Flash size '${arg}' is not supported by this chip type. Supported sizes: ${sizes}`);
     }
   }
 
-  async run_stub() {
-    const stub = this.STUB_CODE;
+  async run_stub(): Promise<ESPLoader> {
+    const stub = this.STUB_CODE as unknown as Record<string, string | number>;
 
     console.log('Uploading stub...');
     for (const field of ['text', 'data']) {
       if (!stub[field]) continue;
-      const offs = stub[`${field}_start`];
-      const code = await unzipAsync(Buffer.from(stub[field], 'base64'));
+      const offs = stub[`${field}_start`] as number;
+      const code = await unzipAsync(Buffer.from(stub[field] as string, 'base64'));
       const blocks = Math.floor((code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK);
       await this.mem_begin(code.length, blocks, this.ESP_RAM_BLOCK, offs);
       for (let seq = 0; seq < blocks; seq++) {
@@ -331,25 +365,25 @@ export default class ESPLoader {
     }
 
     console.log('Running stub...');
-    await this.mem_finish(stub['entry']);
+    await this.mem_finish(stub['entry'] as number);
     await sleep(500);
 
     console.log('Stub running...');
-    return new this.STUB_CLASS(this.port);
+    return new this.STUB_CLASS!(this.port);
   }
 
-  async change_baud(baud) {
+  async change_baud(baud: number): Promise<void> {
     console.log(`Changing baud rate to ${baud}`);
     const data = Buffer.alloc(8);
     data.writeUInt32LE(baud, 0);
     data.writeUInt32LE(this.IS_STUB ? this.port.baudRate : 0, 4);  // stub takes the new baud rate and the old one
     await this.command(this.ESP_CHANGE_BAUDRATE, data);
     console.log('Changed.');
-    await this.port.updateAsync({ baudRate: baud });
+    await update(this.port, { baudRate: baud });
     await sleep(50);  // get rid of crap sent during baud rate change
   }
 
-  _update_image_flash_params(address, args, image) {
+  _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
     if (address != this.BOOTLOADER_FLASH_OFFSET) {
       return image;  // not flashing bootloader offset, so don't modify this
     }
@@ -367,11 +401,11 @@ export default class ESPLoader {
     // TODO: verify bootloader image
 
     if (args.flashMode && args.flashMode != 'keep') {
-      flash_mode = { 'qio': 0, 'qout': 1, 'dio': 2, 'dout': 3 }[args.flashMode];
+      flash_mode = { 'qio': 0, 'qout': 1, 'dio': 2, 'dout': 3 }[args.flashMode]!;
     }
 
     if (args.flashFreq && args.flashFreq != 'keep') {
-      flash_freq = { '40m': 0, '26m': 1, '20m': 2, '80m': 0xf }[args.flashFreq];
+      flash_freq = { '40m': 0, '26m': 1, '20m': 2, '80m': 0xf }[args.flashFreq]!;
     }
 
     if (args.flashSize && args.flashSize != 'keep') {
@@ -384,9 +418,10 @@ export default class ESPLoader {
     return image;
   }
 
-  async flash(args, onProgress) {
+  async flash(args: IFlashArgs, onProgress: (progress: IFlashProgress) => void): Promise<void> {
     for (let i = 0; i < args.partitions.length; i++) {
-      let { address, image } = args.partitions[i];
+      const { address } = args.partitions[i];
+      let { image } = args.partitions[i];
       console.log(`Part ${i}: address=${hex(address, 4)} size=${image.length}`);
 
       image = this._pad_image(image, 4);
@@ -430,10 +465,10 @@ export default class ESPLoader {
     }
   }
 
-  async hard_reset() {
-    await this.port.setAsync({ dtr: true, rts: false });  // EN->LOW
+  async hard_reset(): Promise<void> {
+    await set(this.port, { dtr: true, rts: false });  // EN->LOW
     await sleep(100);
-    await this.port.setAsync({ dtr: false, rts: false });
+    await set(this.port, { dtr: false, rts: false });
   }
 
 }

@@ -1,5 +1,5 @@
-import { promisify } from 'util';
 import EventEmitter from 'events';
+import type { BaseBinding } from 'serialport';
 import SerialPort from '@serialport/stream';
 import WSABinding from 'serialport-binding-webserialapi';
 
@@ -7,16 +7,20 @@ import ESPLoader from './ESPLoader';
 import ESP8266ROM from './ESP8266ROM';
 import ESP32ROM from './ESP32ROM';
 
+import { open, closeGracefully } from './utils/serial';
 import sleep from './utils/sleep';
-import gracefully from './utils/gracefully';
+import { IFlashArgs, IConnectEvent } from './';
 
-SerialPort.Binding = WSABinding;
+SerialPort.Binding = WSABinding as unknown as BaseBinding;
 
 export default class ESPTool extends EventEmitter {
 
-  async open(path) {
+  serial: SerialPort | null = null;
+  loader: ESPLoader | null = null;
+
+  async open(path: string): Promise<void> {
     if (this.serial && this.serial.isOpen) {
-      await gracefully(this.serial.close());
+      await closeGracefully(this.serial);
       this.serial = null;
       await sleep(200);
     }
@@ -26,11 +30,8 @@ export default class ESPTool extends EventEmitter {
       autoOpen: false,
     });
 
-    this.serial.openAsync = promisify(this.serial.open.bind(this.serial));
-    this.serial.closeAsync = promisify(this.serial.close.bind(this.serial));
-
     try {
-      await this.serial.openAsync();
+      await open(this.serial);
 
       const detector = new ESPLoader(this.serial);
       await detector.connect();
@@ -44,9 +45,9 @@ export default class ESPTool extends EventEmitter {
 
       if (!this.loader) {
         console.warn('Unsupported chip');
-        await gracefully(this.serial.close());
+        closeGracefully(this.serial);
         this.serial = null;
-        return false;
+        return;
       }
 
       this.serial.once('close', () => {
@@ -56,7 +57,7 @@ export default class ESPTool extends EventEmitter {
 
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
-      this.emit('connect', { chip_description });
+      this.emit('connect', { chip_description } as IConnectEvent);
 
       if (this.loader.STUB_CODE) {
         const stub = await this.loader.run_stub();
@@ -64,20 +65,20 @@ export default class ESPTool extends EventEmitter {
         this.loader = stub;
       }
 
-      await this.loader.flash_spi_attach(0);
+      await this.loader?.flash_spi_attach(0);
     } catch (e) {
       console.warn('Failed getting chip model', e);
-      if (this.serial.isOpen) {
-        await gracefully(this.serial.close());
+      if (this.serial && this.serial.isOpen) {
+        closeGracefully(this.serial);
       }
       this.serial = null;
       throw e;
     }
   }
 
-  async flash(args) {
-    await this.loader.flash(args, (progress) => this.emit('progress', progress));
-    await this.loader.hard_reset();
+  async flash(args: IFlashArgs): Promise<void> {
+    await this.loader?.flash(args, (progress) => this.emit('progress', progress));
+    await this.loader?.hard_reset();
   }
 
 }

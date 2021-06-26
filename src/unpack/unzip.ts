@@ -1,22 +1,22 @@
 import { promisify } from 'util';
-import yauzl from 'yauzl';
+import yauzl, { Entry, Options, ZipFile } from 'yauzl';
 import pond from 'pond';
 
-const fromBuffer = promisify(yauzl.fromBuffer);
+const fromBuffer = promisify(yauzl.fromBuffer) as
+  (buffer: Buffer, options?: Options) => Promise<ZipFile>;
 
 // Hack yauzl
+// @ts-ignore
 window.setImmediate = process.nextTick;
 
-function readEntry(zip) {
+function readEntry(zip: ZipFile): Promise<Entry | null> {
   return new Promise((resolve) => {
-    let onEntry, onEnd;
-
-    onEntry = (entry) => {
+    const onEntry = (entry: Entry) => {
       zip.removeListener('end', onEnd);
       resolve(entry);
     };
 
-    onEnd = () => {
+    const onEnd = () => {
       zip.removeListener('entry', onEntry);
       resolve(null);
     };
@@ -27,12 +27,12 @@ function readEntry(zip) {
   });
 }
 
-export default async function unzip(file) {
+export default async function unzip(file: File): Promise<Record<string, Buffer>> {
   const buffer = Buffer.from(await file.arrayBuffer());
   const zip = await fromBuffer(buffer, { lazyEntries: true });
   const openReadStream = promisify(zip.openReadStream.bind(zip));
 
-  const entries = {};
+  const entries: Record<string, Buffer> = {};
   let entry;
   while ((entry = await readEntry(zip)) != null) {
     if (entry.fileName.endsWith('/')) {

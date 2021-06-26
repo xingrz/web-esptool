@@ -1,4 +1,4 @@
-export default function pack(data) {
+export default function pack(data: Buffer): Buffer {
   const out = Buffer.alloc(data.length * 2 + 2);
   out[0] = 0xC0;
   let oi = 1;

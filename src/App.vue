@@ -46,95 +46,107 @@
   </div>
 </template>
 
-<script>
-import unpack from './unpack';
-import ESPTool from './esptool';
-import WSABinding from 'serialport-binding-webserialapi';
+<script lang="ts">
+import { Component, Vue } from "vue-property-decorator";
+
+import unpack from "./unpack";
+import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
+import WSABinding from "serialport-binding-webserialapi";
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
 function hackWSABinding() {
   // Hack WSABinding to force it to refresh ports
   // after the current port is closed
-  navigator.serial.getPorts = async () => ([]);
+  // @ts-ignore
+  navigator.serial.getPorts = async () => [];
+  // @ts-ignore
   WSABinding.internalBasePortsList = [];
 }
 
-export default {
-  name: 'App',
-  data: () => ({
-    file: null,
-    flashArgs: {},
-    progress: null,
-    imageSizes: [],
-    imageSizesTotal: 0,
-    busy: false,
-  }),
-  mounted() {
+@Component
+export default class App extends Vue {
+  file: File | null = null;
+  progress: number | null = null;
+  imageSizes: number[] = [];
+  imageSizesTotal = 0;
+  busy = false;
+
+  flashArgs?: IFlashArgs;
+  esp?: ESPTool;
+
+  mounted(): void {
     hackWSABinding();
     this.esp = new ESPTool();
 
-    this.esp.on('connect', ({ chip_description }) => {
+    this.esp.on("connect", ({ chip_description }: IConnectEvent) => {
       console.log(`Connected: ${chip_description}`);
       this.$message.success(`已连接：${chip_description}`);
     });
 
-    this.esp.on('disconnect', () => {
-      console.log('Disconnected');
+    this.esp.on("disconnect", () => {
+      console.log("Disconnected");
     });
 
-    this.esp.on('progress', ({ index, blocks_written, blocks_total }) => {
+    this.esp.on("progress", ({ index, blocks_written, blocks_total }) => {
       let success = 0;
       for (let i = 0; i < index; i++) {
         success += this.imageSizes[i];
       }
-      const progress = success + this.imageSizes[index] * (blocks_written / blocks_total);
-      this.progress = progress / this.imageSizesTotal * 100;
+      const progress =
+        success + this.imageSizes[index] * (blocks_written / blocks_total);
+      this.progress = (progress / this.imageSizesTotal) * 100;
     });
-  },
-  methods: {
-    async handleFile(file) {
-      if (file.size >= MAX_FILE_SIZE) {
-        this.$message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
-        return;
-      }
+  }
 
-      const flashArgs = await unpack(file);
-      if (flashArgs == null) {
-        this.$message.error('该文件不是一个合法的固件包');
-        return;
-      }
+  async handleFile(file: File): Promise<void> {
+    if (file.size >= MAX_FILE_SIZE) {
+      this.$message.error(
+        `文件过大: ${Math.round(file.size / 1024 / 1024)} MB`
+      );
+      return;
+    }
 
-      this.file = file;
-      this.flashArgs = flashArgs;
+    const flashArgs = await unpack(file);
+    if (flashArgs == null) {
+      this.$message.error("该文件不是一个合法的固件包");
+      return;
+    }
 
-      this.imageSizes = flashArgs.partitions.map(({ image }) => image.length);
-      this.imageSizesTotal = this.imageSizes.reduce((total, size) => total + size, 0);
-    },
-    async start() {
-      this.busy = true;
-      this.progress = 0;
-      try {
-        await this.esp.open('wsa://default');
-      } catch (e) {
-        this.$message.error('设备打开失败');
-        this.busy = false;
-        return;
-      }
-      try {
-        await this.esp.flash(this.flashArgs);
-      } catch (e) {
-        console.error(e);
-        this.$message.error('烧录失败');
-      }
-      console.log('done');
+    this.file = file;
+    this.flashArgs = flashArgs;
+
+    this.imageSizes = flashArgs.partitions.map(({ image }) => image.length);
+    this.imageSizesTotal = this.imageSizes.reduce(
+      (total, size) => total + size,
+      0
+    );
+  }
+
+  async start(): Promise<void> {
+    this.busy = true;
+    this.progress = 0;
+    try {
+      await this.esp?.open("wsa://default");
+    } catch (e) {
+      this.$message.error("设备打开失败");
       this.busy = false;
-    },
-    formatProgress() {
-      return this.progress >= 100 ? '完成' : `${Math.floor(this.progress)}%`;
-    },
-  },
-};
+      return;
+    }
+    try {
+      await this.esp?.flash(this.flashArgs!);
+    } catch (e) {
+      console.error(e);
+      this.$message.error("烧录失败");
+    }
+    console.log("done");
+    this.busy = false;
+  }
+
+  formatProgress(): string {
+    return this.progress! >= 100 ? "完成" : `${Math.floor(this.progress!)}%`;
+  }
+}
 </script>
 
 <style>

@@ -28,16 +28,16 @@ export default class ESP32ROM extends ESPLoader {
   STUB_CLASS = ESP32StubLoader;
   STUB_CODE = ESP32Stub;
 
-  async read_efuse(n) {
+  async read_efuse(n: number): Promise<number> {
     return await this.read_reg(this.EFUSE_RD_REG_BASE + (4 * n));
   }
 
-  async get_pkg_version() {
+  async get_pkg_version(): Promise<number> {
     const word3 = await this.read_efuse(3);
     return ((word3 >> 9) & 0x07) + (((word3 >> 2) & 0x1) << 3);
   }
 
-  async get_chip_revision() {
+  async get_chip_revision(): Promise<number> {
     const word3 = await this.read_efuse(3);
     const word5 = await this.read_efuse(5);
     const apb_ctl_date = await this.read_reg(this.DR_REG_SYSCON_BASE + 0x7C);
@@ -52,7 +52,7 @@ export default class ESP32ROM extends ESPLoader {
     return 3;
   }
 
-  async get_chip_description() {
+  async get_chip_description(): Promise<string> {
     const pkg_version = await this.get_pkg_version();
     const chip_revision = await this.get_chip_revision();
     const rev3 = (chip_revision == 3);
@@ -74,7 +74,7 @@ export default class ESP32ROM extends ESPLoader {
     return `${chip_name} (revision ${chip_revision})`;
   }
 
-  async flash_spi_attach(hspi_arg) {
+  async flash_spi_attach(hspi_arg: number): Promise<void> {
     const data = Buffer.alloc(8);
     data.writeUInt32LE(hspi_arg, 0);
     data.writeUInt32LE(0, 4);
@@ -89,7 +89,7 @@ class ESP32StubLoader extends ESP32ROM {
   STATUS_BYTES_LENGTH = 2;  // same as ESP8266, different to ESP32 ROM
   IS_STUB = true;
 
-  async flash_spi_attach(hspi_arg) {
+  async flash_spi_attach(hspi_arg: number): Promise<void> {
     const data = Buffer.alloc(4);
     data.writeUInt32LE(hspi_arg, 0);
     this.check(await this.command(this.ESP_SPI_ATTACH, data));

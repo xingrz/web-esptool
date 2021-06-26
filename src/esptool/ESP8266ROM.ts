@@ -25,7 +25,7 @@ export default class ESP8266ROM extends ESPLoader {
   STUB_CLASS = ESP8266StubLoader;
   STUB_CODE = ESP8266Stub;
 
-  async get_efuses() {
+  async get_efuses(): Promise<number[]> {
     return [
       await this.read_reg(0x3ff00050),
       await this.read_reg(0x3ff00054),
@@ -34,7 +34,7 @@ export default class ESP8266ROM extends ESPLoader {
     ];
   }
 
-  _get_flash_size(efuses) {
+  _get_flash_size(efuses: number[]): number {
     const r0_4 = efuses[0] & (1 << 4);
     const r3_25 = efuses[3] & (1 << 25);
     const r3_26 = efuses[3] & (1 << 26);
@@ -57,7 +57,7 @@ export default class ESP8266ROM extends ESPLoader {
     return -1;
   }
 
-  async get_chip_description() {
+  async get_chip_description(): Promise<string> {
     const efuses = await this.get_efuses();
     if ((efuses[0] & (1 << 4)) || (efuses[2] & (1 << 16))) {
       const flash_size = this._get_flash_size(efuses);
@@ -72,7 +72,7 @@ export default class ESP8266ROM extends ESPLoader {
     }
   }
 
-  get_erase_size(offset, size) {
+  get_erase_size(offset: number, size: number): number {
     const sectors_per_block = 16;
     const sector_size = this.FLASH_SECTOR_SIZE;
     const num_sectors = Math.floor((size + sector_size - 1) / sector_size);
@@ -90,7 +90,7 @@ export default class ESP8266ROM extends ESPLoader {
     }
   }
 
-  async flash_spi_attach() {
+  async flash_spi_attach(): Promise<void> {
     await this.flash_begin(0, 0);
   }
 
@@ -101,7 +101,7 @@ class ESP8266StubLoader extends ESP8266ROM {
   FLASH_WRITE_SIZE = 0x4000;  // matches MAX_WRITE_BLOCK in stub_loader.c
   IS_STUB = true;
 
-  get_erase_size(offset, size) {
+  get_erase_size(offset: number, size: number): number {
     return size;  // stub doesn't have same size bug as ROM loader
   }
 

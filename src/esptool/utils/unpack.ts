@@ -1,4 +1,4 @@
-export default function unpack(queue, data) {
+export default function unpack(queue: Buffer, data: Buffer): { queue: Buffer, packets: Buffer[] } {
   queue = Buffer.concat([queue, data]);
   const packets = [];
   let pi = 0, qi = 0;
