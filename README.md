@@ -1,4 +1,4 @@
-[Web ESPTool](https://esp.xingrz.me) [![Auto deploy](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml/badge.svg)](https://github.com/xingrz/web-esptool/actions/workflows/deploy.yml)
+[Web ESPTool](https://esp.xingrz.me)
 ==========
 
 [![license][license-img]][license-url] [![issues][issues-img]][issues-url] [![commits][commits-img]][commits-url]
