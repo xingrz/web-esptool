@@ -6,6 +6,7 @@ import WSABinding from 'serialport-binding-webserialapi';
 import ESPLoader from './ESPLoader';
 import ESP8266ROM from './ESP8266ROM';
 import ESP32ROM from './ESP32ROM';
+import ESP32S2ROM from './ESP32S2ROM';
 
 import { open, closeGracefully } from './utils/serial';
 import sleep from './utils/sleep';
@@ -36,7 +37,7 @@ export default class ESPTool extends EventEmitter {
       const detector = new ESPLoader(this.serial);
       await detector.connect();
       const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
-      for (const cls of [ESP8266ROM, ESP32ROM]) {
+      for (const cls of [ESP8266ROM, ESP32ROM, ESP32S2ROM]) {
         if (cls.CHIP_DETECT_MAGIC_VALUE.includes(chip_magic_value)) {
           this.loader = new cls(this.serial);
         }

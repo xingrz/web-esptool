@@ -18,7 +18,7 @@ npm run serve
 - [x] Stub loader
 - [x] ESP8266/ESP8285
 - [x] ESP32
-- [ ] ESP32-S2
+- [x] ESP32-S2
 - [ ] ESP32-C3
 - [ ] Compression
 - [ ] Encryption
