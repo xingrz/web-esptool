@@ -466,7 +466,7 @@ export default class ESPLoader {
   }
 
   async hard_reset(): Promise<void> {
-    await set(this.port, { dtr: true, rts: false });  // EN->LOW
+    await set(this.port, { dtr: false, rts: true });  // EN->LOW
     await sleep(100);
     await set(this.port, { dtr: false, rts: false });
   }
