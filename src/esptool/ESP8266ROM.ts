@@ -3,7 +3,7 @@ import ESP8266Stub from './stubs/ESP8266Stub';
 
 export default class ESP8266ROM extends ESPLoader {
 
-  static CHIP_DETECT_MAGIC_VALUE = 0xfff0c101;
+  static CHIP_DETECT_MAGIC_VALUE = [0xfff0c101];
 
   CHIP_NAME = 'ESP8266';
   IS_STUB = false;
