@@ -64,8 +64,6 @@ export default class ESPTool extends EventEmitter {
         this.loader.release();
         this.loader = stub;
       }
-
-      await this.loader?.flash_spi_attach(0);
     } catch (e) {
       console.warn('Failed getting chip model', e);
       if (this.serial && this.serial.isOpen) {

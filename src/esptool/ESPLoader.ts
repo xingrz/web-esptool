@@ -257,11 +257,6 @@ export default class ESPLoader {
     return size;
   }
 
-  async flash_spi_attach(hspi_arg: number): Promise<void> {
-    hspi_arg;
-    throw new Error('Not supported');
-  }
-
   _checksum(data: Buffer): number {
     let state = this.ESP_CHECKSUM_MAGIC;
     for (const b of data) {

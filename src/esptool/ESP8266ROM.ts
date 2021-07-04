@@ -90,10 +90,6 @@ export default class ESP8266ROM extends ESPLoader {
     }
   }
 
-  async flash_spi_attach(): Promise<void> {
-    await this.flash_begin(0, 0);
-  }
-
 }
 
 class ESP8266StubLoader extends ESP8266ROM {
