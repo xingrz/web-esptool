@@ -8,14 +8,15 @@ export default class ESP32S2ROM extends ESP32ROM {
   CHIP_NAME = 'ESP32-S2';
 
   EFUSE_BASE = 0x3f41A000;
+  EFUSE_BLK0 = this.EFUSE_BASE + 0x030;
+  EFUSE_BLK1 = this.EFUSE_BASE + 0x044;
 
   STUB_CLASS = ESP32S2StubLoader;
   STUB_CODE = ESP32S2Stub;
 
   async get_pkg_version(): Promise<number> {
-    const num_word = 3;
-    const block1_addr = this.EFUSE_BASE + 0x044;
-    const word3 = await this.read_reg(block1_addr + (4 * num_word));
+    // EFUSE_BLK1, 117, 4, PKG_VERSION
+    const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
     return (word3 >> 21) & 0x0F;
   }
 

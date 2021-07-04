@@ -11,7 +11,7 @@ export default class ESP32ROM extends ESPLoader {
   // ESP32 uses a 4 byte status reply
   STATUS_BYTES_LENGTH = 4;
 
-  EFUSE_RD_REG_BASE = 0x3ff5a000;
+  EFUSE_BLK0 = 0x3ff5a000;
 
   DR_REG_SYSCON_BASE = 0x3ff66000;
 
@@ -28,18 +28,22 @@ export default class ESP32ROM extends ESPLoader {
   STUB_CLASS = ESP32StubLoader;
   STUB_CODE = ESP32Stub;
 
-  async read_efuse(n: number): Promise<number> {
-    return await this.read_reg(this.EFUSE_RD_REG_BASE + (4 * n));
+  async read_efuse(block: number, n: number): Promise<number> {
+    return await this.read_reg(block + (4 * n));
   }
 
   async get_pkg_version(): Promise<number> {
-    const word3 = await this.read_efuse(3);
+    // EFUSE_BLK0, 105, 3, EFUSE_RD_CHIP_VER_PKG
+    // EFUSE_BLK0, 98, 1, EFUSE_RD_CHIP_VER_PKG_4BIT
+    const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
     return ((word3 >> 9) & 0x07) + (((word3 >> 2) & 0x1) << 3);
   }
 
   async get_chip_revision(): Promise<number> {
-    const word3 = await this.read_efuse(3);
-    const word5 = await this.read_efuse(5);
+    // EFUSE_BLK0, 111, 1, EFUSE_RD_CHIP_VER_REV1
+    // EFUSE_BLK0, 180, 1, EFUSE_RD_CHIP_VER_REV2
+    const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
+    const word5 = await this.read_efuse(this.EFUSE_BLK0, 5);
     const apb_ctl_date = await this.read_reg(this.DR_REG_SYSCON_BASE + 0x7C);
 
     const rev_bit0 = (word3 >> 15) & 0x1
@@ -56,7 +60,7 @@ export default class ESP32ROM extends ESPLoader {
     const pkg_version = await this.get_pkg_version();
     const chip_revision = await this.get_chip_revision();
     const rev3 = (chip_revision == 3);
-    const single_core = (await this.read_efuse(3)) & (1 << 0); // CHIP_VER DIS_APP_CPU
+    const single_core = (await this.read_efuse(this.EFUSE_BLK0, 3)) & (1 << 0); // CHIP_VER DIS_APP_CPU
 
     let chip_name = {
       0: single_core ? 'ESP32-S0WDQ6' : 'ESP32-D0WDQ6',
