@@ -1,5 +1,5 @@
+import { IStub } from './ESPLoader';
 import ESP32ROM from './ESP32ROM';
-import ESP32S2Stub from './stubs/stub_flasher_32s2.elf';
 
 export default class ESP32S2ROM extends ESP32ROM {
 
@@ -12,7 +12,13 @@ export default class ESP32S2ROM extends ESP32ROM {
   EFUSE_BLK1 = this.EFUSE_BASE + 0x044;
 
   STUB_CLASS = ESP32S2StubLoader;
-  STUB_CODE = ESP32S2Stub;
+
+  async load_stub(): Promise<IStub | null> {
+    return await import(
+      /* webpackChunkName: 'stub_flasher_32s2' */
+      './stubs/stub_flasher_32s2.elf'
+    );
+  }
 
   async get_pkg_version(): Promise<number> {
     // EFUSE_BLK1, 117, 4, PKG_VERSION

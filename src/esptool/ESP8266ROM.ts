@@ -1,5 +1,4 @@
-import ESPLoader from './ESPLoader';
-import ESP8266Stub from './stubs/stub_flasher_8266.elf';
+import ESPLoader, { IStub } from './ESPLoader';
 
 export default class ESP8266ROM extends ESPLoader {
 
@@ -23,7 +22,13 @@ export default class ESP8266ROM extends ESPLoader {
   BOOTLOADER_FLASH_OFFSET = 0;
 
   STUB_CLASS = ESP8266StubLoader;
-  STUB_CODE = ESP8266Stub;
+
+  async load_stub(): Promise<IStub | null> {
+    return await import(
+      /* webpackChunkName: 'stub_flasher_8266' */
+      './stubs/stub_flasher_8266.elf'
+    );
+  }
 
   async get_efuses(): Promise<number[]> {
     return [

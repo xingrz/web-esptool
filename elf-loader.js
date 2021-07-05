@@ -29,7 +29,7 @@ const loader = module.exports = async function (source) {
 
   stub.entry = elf.entry;
 
-  callback(null, `export default ${JSON.stringify(stub)};`);
+  callback(null, `module.exports = ${JSON.stringify(stub)};`);
 }
 
 loader.raw = true;

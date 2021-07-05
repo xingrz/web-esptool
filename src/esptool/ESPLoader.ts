@@ -17,13 +17,7 @@ interface IResponse {
   data: Buffer;
 }
 
-export interface IStub {
-  text: string;
-  text_start: number;
-  entry: number;
-  data: string;
-  data_start: number;
-}
+export type IStub = Record<string, string | number>;
 
 export interface IFlashProgress {
   index: number;
@@ -83,7 +77,6 @@ export default class ESPLoader {
   port: SerialPort;
   queue: Buffer;
 
-  STUB_CODE?: IStub;
   STUB_CLASS?: { new(port: SerialPort): ESPLoader };
 
   private _trace: (text?: string) => void;
@@ -386,8 +379,15 @@ export default class ESPLoader {
     }
   }
 
-  async run_stub(): Promise<ESPLoader> {
-    const stub = this.STUB_CODE as unknown as Record<string, string | number>;
+  async load_stub(): Promise<IStub | null> {
+    return null;
+  }
+
+  async run_stub(): Promise<ESPLoader | null> {
+    const stub = await this.load_stub();
+    if (!stub) {
+      return null;
+    }
 
     console.log('Uploading stub...');
     for (const field of ['text', 'data']) {

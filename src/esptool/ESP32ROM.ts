@@ -1,5 +1,4 @@
-import ESPLoader from './ESPLoader';
-import ESP32Stub from './stubs/stub_flasher_32.elf';
+import ESPLoader, { IStub } from './ESPLoader';
 
 export default class ESP32ROM extends ESPLoader {
 
@@ -26,7 +25,13 @@ export default class ESP32ROM extends ESPLoader {
   BOOTLOADER_FLASH_OFFSET = 0x1000;
 
   STUB_CLASS = ESP32StubLoader;
-  STUB_CODE = ESP32Stub;
+
+  async load_stub(): Promise<IStub | null> {
+    return await import(
+      /* webpackChunkName: 'stub_flasher_32' */
+      './stubs/stub_flasher_32.elf'
+    );
+  }
 
   async read_efuse(block: number, n: number): Promise<number> {
     return await this.read_reg(block + (4 * n));
