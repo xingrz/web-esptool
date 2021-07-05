@@ -76,6 +76,13 @@ export default class ESPTool extends EventEmitter {
     }
   }
 
+  async close(): Promise<void> {
+    if (this.serial && this.serial.isOpen) {
+      await closeGracefully(this.serial);
+      this.serial = null;
+    }
+  }
+
   async flash(args: IFlashArgs): Promise<void> {
     await this.loader?.flash(args, (progress) => this.emit('progress', progress));
     await this.loader?.hard_reset();

@@ -51,18 +51,8 @@ import { Component, Vue } from "vue-property-decorator";
 
 import unpack from "./unpack";
 import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
-import WSABinding from "serialport-binding-webserialapi";
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
-
-function hackWSABinding() {
-  // Hack WSABinding to force it to refresh ports
-  // after the current port is closed
-  // @ts-ignore
-  navigator.serial.getPorts = async () => [];
-  // @ts-ignore
-  WSABinding.internalBasePortsList = [];
-}
 
 @Component
 export default class App extends Vue {
@@ -76,7 +66,6 @@ export default class App extends Vue {
   esp?: ESPTool;
 
   mounted(): void {
-    hackWSABinding();
     this.esp = new ESPTool();
 
     this.esp.on("connect", ({ chip_description }: IConnectEvent) => {
@@ -139,6 +128,7 @@ export default class App extends Vue {
       console.error(e);
       this.$message.error("烧录失败");
     }
+    await this.esp?.close();
     console.log("done");
     this.busy = false;
   }
