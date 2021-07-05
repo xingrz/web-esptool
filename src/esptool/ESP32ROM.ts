@@ -1,5 +1,5 @@
 import ESPLoader from './ESPLoader';
-import ESP32Stub from './stubs/ESP32Stub';
+import ESP32Stub from './stubs/stub_flasher_32.elf';
 
 export default class ESP32ROM extends ESPLoader {
 

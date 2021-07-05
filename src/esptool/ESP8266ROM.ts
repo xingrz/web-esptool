@@ -1,5 +1,5 @@
 import ESPLoader from './ESPLoader';
-import ESP8266Stub from './stubs/ESP8266Stub';
+import ESP8266Stub from './stubs/stub_flasher_8266.elf';
 
 export default class ESP8266ROM extends ESPLoader {
 

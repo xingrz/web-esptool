@@ -31,6 +31,7 @@
     "@vue/cli-plugin-typescript": "^4.5.13",
     "@vue/cli-service": "~4.5.0",
     "@vue/eslint-config-typescript": "^7.0.0",
+    "elfy": "^1.0.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "jest": "^27.0.5",

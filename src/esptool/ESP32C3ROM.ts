@@ -1,5 +1,5 @@
 import ESP32ROM from './ESP32ROM';
-import ESP32C3Stub from './stubs/ESP32C3Stub';
+import ESP32C3Stub from './stubs/stub_flasher_32c3.elf';
 
 export default class ESP32C3ROM extends ESP32ROM {
 

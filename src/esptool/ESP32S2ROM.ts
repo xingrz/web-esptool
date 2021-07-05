@@ -1,5 +1,5 @@
 import ESP32ROM from './ESP32ROM';
-import ESP32S2Stub from './stubs/ESP32S2Stub';
+import ESP32S2Stub from './stubs/stub_flasher_32s2.elf';
 
 export default class ESP32S2ROM extends ESP32ROM {
 
