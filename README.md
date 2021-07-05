@@ -20,7 +20,7 @@ npm run serve
 - [x] ESP32
 - [x] ESP32-S2
 - [x] ESP32-C3
-- [ ] Compression
+- [x] Compression
 - [ ] Encryption
 
 ## Links

@@ -1,5 +1,5 @@
 import { promisify } from 'util';
-import { unzip } from 'zlib';
+import zlib from 'zlib';
 import SerialPort from '@serialport/stream';
 import hex from './utils/hex';
 import once from './utils/once';
@@ -9,7 +9,8 @@ import unpack from './utils/unpack';
 import { set, update } from './utils/serial';
 import { IFlashArgs } from './';
 
-const unzipAsync = promisify(unzip);
+const unzip = promisify(zlib.unzip);
+const deflate = promisify(zlib.deflate);
 
 interface IResponse {
   val: number;
@@ -40,6 +41,8 @@ export default class ESPLoader {
   CHIP_NAME = 'Espressif device';
   IS_STUB = false;
 
+  COMPRESS = true;
+
   // Commands supported by ESP8266 ROM bootloader
   ESP_FLASH_BEGIN = 0x02;
   ESP_FLASH_DATA = 0x03;
@@ -49,6 +52,9 @@ export default class ESPLoader {
   ESP_MEM_DATA = 0x07;
   ESP_SYNC = 0x08;
   ESP_READ_REG = 0x0A;
+  ESP_FLASH_DEFL_BEGIN = 0x10;
+  ESP_FLASH_DEFL_DATA = 0x11;
+  ESP_FLASH_DEFL_END = 0x12;
 
   // Some comands supported by ESP32 ROM bootloader(or -8266 w / stub)
   ESP_SPI_ATTACH = 0x0D;
@@ -325,6 +331,44 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_END, data));
   }
 
+  async flash_defl_begin(size: number, compsize: number, offset: number): Promise<number> {
+    const num_blocks = Math.floor((compsize + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
+    const erase_blocks = Math.floor((size + this.FLASH_WRITE_SIZE - 1) / this.FLASH_WRITE_SIZE);
+
+    const write_size = this.IS_STUB
+      ? size  // stub expects number of bytes here, manages erasing internally
+      : erase_blocks * this.FLASH_WRITE_SIZE; // ROM expects rounded up to erase block size
+
+    console.log(`Comporessed ${size} bytes to ${compsize}...`);
+
+    const data = Buffer.alloc(16);
+    data.writeUInt32LE(write_size, 0);
+    data.writeUInt32LE(num_blocks, 4);
+    data.writeUInt32LE(this.FLASH_WRITE_SIZE, 8);
+    data.writeUInt32LE(offset, 12);
+
+    this.check(await this.command(this.ESP_FLASH_DEFL_BEGIN, data, 0, 5000, 1));
+
+    return num_blocks;
+  }
+
+  async flash_defl_block(data: Buffer, seq: number): Promise<void> {
+    const hdr = Buffer.alloc(16);
+    hdr.writeUInt32LE(data.length, 0);
+    hdr.writeUInt32LE(seq, 4);
+    hdr.writeUInt32LE(0, 8);
+    hdr.writeUInt32LE(0, 12);
+
+    const buf = Buffer.concat([hdr, data]);
+    this.check(await this.command(this.ESP_FLASH_DEFL_DATA, buf, this._checksum(data), 5000, 1));
+  }
+
+  async flash_defl_finish(reboot = false): Promise<void> {
+    const data = Buffer.alloc(4);
+    data.writeUInt32LE(reboot ? 0 : 1, 0);
+    this.check(await this.command(this.ESP_FLASH_DEFL_END, data));
+  }
+
   _pad_image(data: Buffer, alignment: number, pad_character = 0xFF): Buffer {
     const pad_mod = data.length % alignment;
     if (pad_mod != 0) {
@@ -349,7 +393,7 @@ export default class ESPLoader {
     for (const field of ['text', 'data']) {
       if (!stub[field]) continue;
       const offs = stub[`${field}_start`] as number;
-      const code = await unzipAsync(Buffer.from(stub[field] as string, 'base64'));
+      const code = await unzip(Buffer.from(stub[field] as string, 'base64'));
       const blocks = Math.floor((code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK);
       await this.mem_begin(code.length, blocks, this.ESP_RAM_BLOCK, offs);
       for (let seq = 0; seq < blocks; seq++) {
@@ -427,14 +471,26 @@ export default class ESPLoader {
 
       image = this._update_image_flash_params(address, args, image);
 
-      const blocks = await this.flash_begin(image.length, address);
+      let blocks;
+      if (this.COMPRESS) {
+        const uncsize = image.length;
+        image = await deflate(image, { level: 9 });
+        blocks = await this.flash_defl_begin(uncsize, image.length, address);
+      } else {
+        blocks = await this.flash_begin(image.length, address);
+      }
 
       let seq = 0;
       let written = 0;
       while (image.length > 0) {
-        console.log(`Writing at ${hex(address + seq * this.FLASH_WRITE_SIZE, 4)}... (${Math.round((seq + 1) / blocks * 100)}%)`);
         const block = image.slice(0, this.FLASH_WRITE_SIZE);
-        await this.flash_block(block, seq);
+        if (this.COMPRESS) {
+          console.log(`Writing... (${Math.round((seq + 1) / blocks * 100)}%)`);
+          await this.flash_defl_block(block, seq);
+        } else {
+          console.log(`Writing at ${hex(address + written, 4)}... (${Math.round((seq + 1) / blocks * 100)}%)`);
+          await this.flash_block(block, seq);
+        }
         image = image.slice(this.FLASH_WRITE_SIZE);
         seq += 1
         written += block.length;
@@ -456,7 +512,11 @@ export default class ESPLoader {
       // skip sending flash_finish to ROM loader here,
       // as it causes the loader to exit and run user code
       await this.flash_begin(0, 0);
-      await this.flash_finish(false);
+      if (this.COMPRESS) {
+        await this.flash_defl_finish(false);
+      } else {
+        await this.flash_finish(false);
+      }
     }
   }
 
