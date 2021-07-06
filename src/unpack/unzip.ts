@@ -40,7 +40,7 @@ export default async function unzip(file: File): Promise<Record<string, Buffer>>
     }
 
     const stream = await openReadStream(entry);
-    entries[`/${entry.fileName}`] = await pond(stream).spoon();
+    entries[`/${entry.fileName}`] = await pond(stream).spoon()!;
   }
 
   return entries;
