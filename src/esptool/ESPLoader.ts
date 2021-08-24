@@ -175,7 +175,7 @@ export default class ESPLoader {
     return val;
   }
 
-  async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
+  async _bootloader_reset(esp32r0_delay = false): Promise<void> {
     // esp32r0_delay is a workaround for bugs with the most common auto reset
     // circuit and Windows, if the EN pin on the dev board does not have
     // enough capacitance.
@@ -212,6 +212,10 @@ export default class ESPLoader {
 
     // IO0 = HIGH, done
     await set(this.port, { dtr: false, rts: false });
+  }
+
+  async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
+    await this._bootloader_reset(esp32r0_delay);
 
     for (let i = 0; i < 5; i++) {
       try {
