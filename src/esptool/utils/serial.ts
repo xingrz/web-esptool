@@ -24,3 +24,23 @@ export function set(serial: SerialPort, options: SerialPort.SetOptions): Promise
 export function update(serial: SerialPort, options: SerialPort.UpdateOptions): Promise<void> {
   return promisify(serial.update.bind(serial))(options);
 }
+
+interface ISerialPortInfo {
+  usbVendorId?: number;
+  usbProductId?: number;
+}
+
+interface ISerialPortBinding {
+  boundedPort?: {
+    getInfo(): Promise<ISerialPortInfo>;
+  };
+}
+
+export async function getInfo(serial: SerialPort): Promise<ISerialPortInfo | null> {
+  const binding = serial.binding as ISerialPortBinding;
+  if (binding.boundedPort) {
+    return await binding.boundedPort.getInfo();
+  } else {
+    return null;
+  }
+}

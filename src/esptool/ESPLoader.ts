@@ -6,7 +6,7 @@ import once from './utils/once';
 import sleep from './utils/sleep';
 import pack from './utils/pack';
 import unpack from './utils/unpack';
-import { set, update } from './utils/serial';
+import { set, update, getInfo } from './utils/serial';
 import { IFlashArgs } from './';
 
 const unzip = promisify(zlib.unzip);
@@ -74,8 +74,13 @@ export default class ESPLoader {
   BOOTLOADER_FLASH_OFFSET = 0;
   FLASH_SIZES: Record<string, number> = {};
 
+  // Device PIDs
+  USB_JTAG_SERIAL_PID = 0x1001;
+
   port: SerialPort;
   queue: Buffer;
+
+  usb_jtag_serial = false;
 
   STUB_CLASS?: { new(port: SerialPort): ESPLoader };
 
@@ -214,8 +219,27 @@ export default class ESPLoader {
     await set(this.port, { dtr: false, rts: false });
   }
 
+  async _bootloader_reset_usb(): Promise<void> {
+    // Set IO0
+    await set(this.port, { dtr: true, rts: false });
+
+    await sleep(100);
+
+    // Reset. Note dtr/rts calls inverted so we go through (1,1) instead of (0,0)
+    await set(this.port, { dtr: false, rts: true });
+
+    await sleep(100);
+
+    // Done
+    await set(this.port, { dtr: false, rts: false });
+  }
+
   async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
-    await this._bootloader_reset(esp32r0_delay);
+    if (this.usb_jtag_serial) {
+      await this._bootloader_reset_usb();
+    } else {
+      await this._bootloader_reset(esp32r0_delay);
+    }
 
     for (let i = 0; i < 5; i++) {
       try {
@@ -230,6 +254,12 @@ export default class ESPLoader {
   }
 
   async connect(attempts = 7): Promise<boolean> {
+    const info = await getInfo(this.port);
+    if (info && info.usbProductId == this.USB_JTAG_SERIAL_PID) {
+      this.usb_jtag_serial = true;
+      console.log('Detected integrated USB Serial/JTAG');
+    }
+
     for (let i = 0; i < attempts; i++) {
       try {
         if (await this._connect_attempt(false)) {
