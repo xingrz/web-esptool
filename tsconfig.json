@@ -15,6 +15,7 @@
     "types": [
       "node",
       "jest",
+      "w3c-web-serial",
       "webpack-env"
     ],
     "paths": {

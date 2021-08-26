@@ -9,11 +9,9 @@
     "test": "jest"
   },
   "dependencies": {
-    "@serialport/stream": "^9.0.7",
     "ant-design-vue": "^1.7.4",
     "core-js": "^3.6.5",
     "pond": "^2.0.1",
-    "serialport-binding-webserialapi": "^1.0.3",
     "vue": "^2.6.11",
     "vue-class-component": "^7.2.6",
     "vue-property-decorator": "^9.1.2",
@@ -22,7 +20,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/node": "^15.12.4",
-    "@types/serialport": "^8.0.1",
+    "@types/w3c-web-serial": "^1.0.2",
     "@types/yauzl": "^2.9.1",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",

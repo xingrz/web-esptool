@@ -116,7 +116,8 @@ export default class App extends Vue {
     this.busy = true;
     this.progress = 0;
     try {
-      await this.esp?.open("wsa://default");
+      const serial = await navigator.serial.requestPort();
+      await this.esp?.open(serial);
     } catch (e) {
       this.$message.error("设备打开失败");
       this.busy = false;

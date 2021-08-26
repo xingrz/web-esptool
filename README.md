@@ -28,7 +28,6 @@ npm run serve
 * [esptool.py](https://github.com/espressif/esptool)
 * [Espressif Serial Protocol](https://github.com/espressif/esptool/wiki/Serial-Protocol)
 * [Web Serial API](https://wicg.github.io/serial/)
-* [node-serialport](https://serialport.io/) ([WSA binding](https://github.com/nathanjel/serialport-binding-web-serial-api))
 * [Ant Design Vue](https://antdv.com/)
 
 ## License

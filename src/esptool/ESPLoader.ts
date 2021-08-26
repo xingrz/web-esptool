@@ -1,16 +1,18 @@
 import { promisify } from 'util';
+import EventEmitter from 'events';
 import zlib from 'zlib';
-import SerialPort from '@serialport/stream';
 import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
 import pack from './utils/pack';
 import unpack from './utils/unpack';
-import { set, update, getInfo } from './utils/serial';
 import { IFlashArgs } from './';
 
 const unzip = promisify(zlib.unzip);
 const deflate = promisify(zlib.deflate);
+
+const DTR = 'dataTerminalReady';
+const RTS = 'requestToSend';
 
 interface IResponse {
   val: number;
@@ -78,6 +80,8 @@ export default class ESPLoader {
   USB_JTAG_SERIAL_PID = 0x1001;
 
   port: SerialPort;
+  reader?: ReadableStreamDefaultReader<Uint8Array>;
+  dispatcher: EventEmitter;
   queue: Buffer;
 
   usb_jtag_serial = false;
@@ -87,11 +91,8 @@ export default class ESPLoader {
   private _trace: (text?: string) => void;
 
   constructor(port: SerialPort) {
-    this._on_data = this._on_data.bind(this);
-
     this.port = port;
-    this.port.on('data', this._on_data);
-
+    this.dispatcher = new EventEmitter();
     this.queue = Buffer.alloc(0);
 
     this._trace = ESPLoader.TRACE
@@ -99,23 +100,46 @@ export default class ESPLoader {
       : () => null;
   }
 
-  release(): void {
-    this.port.removeListener('data', this._on_data);
+  start(): void {
+    this._read();
   }
 
-  _on_data(data: Buffer): void {
-    this._trace(`Read ${data.length} bytes: ${data.toString('hex')}`);
-    const { queue, packets } = unpack(this.queue, data);
-    this.queue = queue;
-    for (const packet of packets) {
-      this._dispatch(packet);
+  async release(): Promise<void> {
+    if (this.reader) {
+      await this.reader.cancel();
     }
   }
 
-  _write(data: Buffer): void {
+  async _read(): Promise<void> {
+    if (!this.port?.readable) return;
+
+    const reader = this.reader = this.port.readable.getReader();
+    try {
+      while (this.reader) {
+        const { value, done } = await reader.read();
+        if (!value || done) break;
+        const data = Buffer.from(value);
+        this._trace(`Read ${data.length} bytes: ${data.toString('hex')}`);
+        const { queue, packets } = unpack(this.queue, data);
+        this.queue = queue;
+        for (const packet of packets) {
+          this._dispatch(packet);
+        }
+      }
+    } finally {
+      reader.releaseLock();
+      delete this.reader;
+    }
+  }
+
+  async _write(data: Buffer): Promise<void> {
     data = pack(data);
     this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
-    this.port.write(data);
+    const writer = this.port.writable?.getWriter();
+    if (writer) {
+      await writer.write(data);
+      writer.releaseLock();
+    }
   }
 
   _dispatch(data: Buffer): void {
@@ -128,7 +152,7 @@ export default class ESPLoader {
 
     this._trace(`< res op=${hex(op)} len=${size} val=${val} data=${data.toString('hex')}`);
 
-    this.port.emit(`res:${op}`, { val, data } as IResponse);
+    this.dispatcher.emit(`res:${op}`, { val, data } as IResponse);
   }
 
   async command(op: number, data: Buffer, chk = 0, timeout = 500, tries = 5): Promise<IResponse> {
@@ -142,8 +166,8 @@ export default class ESPLoader {
     const out = Buffer.concat([hdr, data]);
     for (let i = 0; i < tries; i++) {
       try {
-        this._write(out);
-        return await once(this.port, `res:${op}`, timeout) as IResponse;
+        await this._write(out);
+        return await once(this.dispatcher, `res:${op}`, timeout) as IResponse;
       } catch (e) {
         // ignored
       }
@@ -193,7 +217,7 @@ export default class ESPLoader {
 
     // IO0 = HIGH
     // EN = LOW, chip in reset
-    await set(this.port, { dtr: false, rts: true });
+    await this.port?.setSignals({ [DTR]: false, [RTS]: true });
 
     await sleep(100);
     if (esp32r0_delay) {
@@ -205,7 +229,7 @@ export default class ESPLoader {
 
     // IO0 = LOW
     // EN = HIGH, chip out of reset
-    await set(this.port, { dtr: true, rts: false });
+    await this.port?.setSignals({ [DTR]: true, [RTS]: false });
 
     if (esp32r0_delay) {
       // Sleep longer after reset.
@@ -216,22 +240,22 @@ export default class ESPLoader {
     await sleep(50);
 
     // IO0 = HIGH, done
-    await set(this.port, { dtr: false, rts: false });
+    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
   async _bootloader_reset_usb(): Promise<void> {
     // Set IO0
-    await set(this.port, { dtr: true, rts: false });
+    await this.port?.setSignals({ [DTR]: true, [RTS]: false });
 
     await sleep(100);
 
     // Reset. Note dtr/rts calls inverted so we go through (1,1) instead of (0,0)
-    await set(this.port, { dtr: false, rts: true });
+    await this.port?.setSignals({ [DTR]: false, [RTS]: true });
 
     await sleep(100);
 
     // Done
-    await set(this.port, { dtr: false, rts: false });
+    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
   async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
@@ -254,8 +278,7 @@ export default class ESPLoader {
   }
 
   async connect(attempts = 7): Promise<boolean> {
-    const info = await getInfo(this.port);
-    if (info && info.usbProductId == this.USB_JTAG_SERIAL_PID) {
+    if (this.port?.getInfo()?.usbProductId == this.USB_JTAG_SERIAL_PID) {
       this.usb_jtag_serial = true;
       console.log('Detected integrated USB Serial/JTAG');
     }
@@ -445,17 +468,6 @@ export default class ESPLoader {
     return new this.STUB_CLASS!(this.port);
   }
 
-  async change_baud(baud: number): Promise<void> {
-    console.log(`Changing baud rate to ${baud}`);
-    const data = Buffer.alloc(8);
-    data.writeUInt32LE(baud, 0);
-    data.writeUInt32LE(this.IS_STUB ? this.port.baudRate : 0, 4);  // stub takes the new baud rate and the old one
-    await this.command(this.ESP_CHANGE_BAUDRATE, data);
-    console.log('Changed.');
-    await update(this.port, { baudRate: baud });
-    await sleep(50);  // get rid of crap sent during baud rate change
-  }
-
   _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
     if (address != this.BOOTLOADER_FLASH_OFFSET) {
       return image;  // not flashing bootloader offset, so don't modify this
@@ -555,9 +567,9 @@ export default class ESPLoader {
   }
 
   async hard_reset(): Promise<void> {
-    await set(this.port, { dtr: false, rts: true });  // EN->LOW
+    await this.port?.setSignals({ [DTR]: false, [RTS]: true });  // EN->LOW
     await sleep(100);
-    await set(this.port, { dtr: false, rts: false });
+    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
 }
