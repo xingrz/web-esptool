@@ -110,7 +110,7 @@ export default class ESPLoader {
     }
   }
 
-  async _read(): Promise<void> {
+  private async _read(): Promise<void> {
     if (!this.port?.readable) return;
 
     const reader = this.reader = this.port.readable.getReader();
@@ -132,7 +132,7 @@ export default class ESPLoader {
     }
   }
 
-  async _write(data: Buffer): Promise<void> {
+  private async _write(data: Buffer): Promise<void> {
     data = pack(data);
     this._trace(`Write ${data.length} bytes: ${data.toString('hex')}`);
     const writer = this.port.writable?.getWriter();
@@ -142,7 +142,7 @@ export default class ESPLoader {
     }
   }
 
-  _dispatch(data: Buffer): void {
+  private _dispatch(data: Buffer): void {
     if (data.length < 8) return;
     if (data[0] != 0x01) return;
     const op = data[1];
@@ -175,7 +175,7 @@ export default class ESPLoader {
     throw new Error('Timeout waiting for command response');
   }
 
-  check({ val, data }: IResponse): number | Buffer {
+  private check({ val, data }: IResponse): number | Buffer {
     if (data.length < this.STATUS_BYTES_LENGTH) {
       throw new Error(`Only got ${data.length} byte status response.`);
     }
@@ -204,7 +204,7 @@ export default class ESPLoader {
     return val;
   }
 
-  async _bootloader_reset(esp32r0_delay = false): Promise<void> {
+  private async _bootloader_reset(esp32r0_delay = false): Promise<void> {
     // esp32r0_delay is a workaround for bugs with the most common auto reset
     // circuit and Windows, if the EN pin on the dev board does not have
     // enough capacitance.
@@ -243,7 +243,7 @@ export default class ESPLoader {
     await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
-  async _bootloader_reset_usb(): Promise<void> {
+  private async _bootloader_reset_usb(): Promise<void> {
     // Set IO0
     await this.port?.setSignals({ [DTR]: true, [RTS]: false });
 
@@ -258,7 +258,7 @@ export default class ESPLoader {
     await this.port?.setSignals({ [DTR]: false, [RTS]: false });
   }
 
-  async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
+  private async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
     if (this.usb_jtag_serial) {
       await this._bootloader_reset_usb();
     } else {
@@ -313,7 +313,7 @@ export default class ESPLoader {
     return size;
   }
 
-  _checksum(data: Buffer): number {
+  private _checksum(data: Buffer): number {
     let state = this.ESP_CHECKSUM_MAGIC;
     for (const b of data) {
       state ^= b;
@@ -419,7 +419,7 @@ export default class ESPLoader {
     this.check(await this.command(this.ESP_FLASH_DEFL_END, data));
   }
 
-  _pad_image(data: Buffer, alignment: number, pad_character = 0xFF): Buffer {
+  private _pad_image(data: Buffer, alignment: number, pad_character = 0xFF): Buffer {
     const pad_mod = data.length % alignment;
     if (pad_mod != 0) {
       data = Buffer.concat([data, Buffer.alloc(pad_mod, pad_character)]);
@@ -427,7 +427,7 @@ export default class ESPLoader {
     return data;
   }
 
-  _parse_flash_size_arg(arg: string): number {
+  private _parse_flash_size_arg(arg: string): number {
     if (this.FLASH_SIZES[arg]) {
       return this.FLASH_SIZES[arg];
     } else {
@@ -468,7 +468,7 @@ export default class ESPLoader {
     return new this.STUB_CLASS!(this.port);
   }
 
-  _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
+  private _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
     if (address != this.BOOTLOADER_FLASH_OFFSET) {
       return image;  // not flashing bootloader offset, so don't modify this
     }

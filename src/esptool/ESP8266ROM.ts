@@ -39,7 +39,7 @@ export default class ESP8266ROM extends ESPLoader {
     ];
   }
 
-  _get_flash_size(efuses: number[]): number {
+  private _get_flash_size(efuses: number[]): number {
     const r0_4 = efuses[0] & (1 << 4);
     const r3_25 = efuses[3] & (1 << 25);
     const r3_26 = efuses[3] & (1 << 26);
