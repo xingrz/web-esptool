@@ -20,11 +20,6 @@ export default class ESPTool extends EventEmitter {
       baudRate: 115200
     });
 
-    this.serial.ondisconnect = () => {
-      console.log('Connection closed');
-      this.emit('disconnect');
-    };
-
     try {
       const detector = new ESPLoader(this.serial);
       detector.start();

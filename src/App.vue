@@ -73,10 +73,6 @@ export default class App extends Vue {
       this.$message.success(`已连接：${chip_description}`);
     });
 
-    this.esp.on("disconnect", () => {
-      console.log("Disconnected");
-    });
-
     this.esp.on("progress", ({ index, blocks_written, blocks_total }) => {
       let success = 0;
       for (let i = 0; i < index; i++) {
