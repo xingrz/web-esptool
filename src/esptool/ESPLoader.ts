@@ -468,6 +468,15 @@ export default class ESPLoader {
     return new this.STUB_CLASS!(this.port);
   }
 
+  async change_baud(baud: number, oldBaud: number): Promise<void> {
+    console.log(`Changing baud rate from ${oldBaud} to ${baud}`);
+    const data = Buffer.alloc(8);
+    data.writeUInt32LE(baud, 0);
+    data.writeUInt32LE(this.IS_STUB ? oldBaud : 0, 4);  // stub takes the new baud rate and the old one
+    await this.command(this.ESP_CHANGE_BAUDRATE, data);
+    console.log('Changed.');
+  }
+
   private _update_image_flash_params(address: number, args: IFlashArgs, image: Buffer): Buffer {
     if (address != this.BOOTLOADER_FLASH_OFFSET) {
       return image;  // not flashing bootloader offset, so don't modify this

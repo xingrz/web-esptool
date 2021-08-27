@@ -7,6 +7,10 @@ import ESP32S2ROM from './ESP32S2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
 
 import { IFlashArgs, IConnectEvent } from './';
+import sleep from './utils/sleep';
+
+const BAUD_RATE_DEFAULT = 115200;
+const BAUD_RATE_BOOST = 960000;
 
 const LOADERS = [
   ESP8266ROM,
@@ -23,11 +27,11 @@ export default class ESPTool extends EventEmitter {
   async open(serial: SerialPort): Promise<void> {
     this.serial = serial;
 
-    await this.serial.open({
-      baudRate: 115200
-    });
-
     try {
+      // 1. Open serial port with default baud
+      await this.serial.open({ baudRate: BAUD_RATE_DEFAULT });
+
+      // 2. Detect chip model
       const detector = new ESPLoader(this.serial);
       detector.start();
       await detector.connect();
@@ -38,25 +42,33 @@ export default class ESPTool extends EventEmitter {
         }
       }
       await detector.release();
-
       if (!this.loader) {
         throw new Error('Unsupported chip');
       }
-
       this.loader.start();
 
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
       this.emit('connect', { chip_description } as IConnectEvent);
 
+      // 3. Load stub loader if present
       const stub = await this.loader.run_stub();
-      if (stub != null) {
-        await this.loader.release();
-        this.loader = stub;
-        this.loader.start();
+      if (!stub) {
+        return;
       }
+      await this.loader.release();
+      this.loader = stub;
+      this.loader.start();
+
+      // 4. Boost baud rate
+      await this.loader.change_baud(BAUD_RATE_BOOST, BAUD_RATE_DEFAULT);
+      await sleep(100);
+      await this.loader.release();
+      await this.serial.close();
+      await this.serial.open({ baudRate: BAUD_RATE_BOOST });
+      this.loader.start();
     } catch (e) {
-      console.warn('Failed getting chip model', e);
+      console.warn('Failed launching loader', e);
       await this.serial.close();
       this.serial = null;
       throw e;
