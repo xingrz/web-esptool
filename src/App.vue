@@ -31,7 +31,9 @@
         <a-button
           size="large"
           type="primary"
-          v-bind:disabled="busy || !file"
+          v-if="state != 'flashing'"
+          v-bind:disabled="!file"
+          v-bind:loading="state == 'connecting'"
           v-on:click="start"
           >开始烧录</a-button
         >
@@ -54,13 +56,16 @@ import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
+type IState = "idle" | "connecting" | "flashing";
+
 @Component
 export default class App extends Vue {
   file: File | null = null;
   progress: number | null = null;
   imageSizes: number[] = [];
   imageSizesTotal = 0;
-  busy = false;
+
+  state: IState = "idle";
 
   flashArgs?: IFlashArgs;
   esp?: ESPTool;
@@ -109,16 +114,17 @@ export default class App extends Vue {
   }
 
   async start(): Promise<void> {
-    this.busy = true;
+    this.state = "connecting";
     this.progress = 0;
     try {
       const serial = await navigator.serial.requestPort();
       await this.esp?.open(serial);
     } catch (e) {
       this.$message.error("设备打开失败");
-      this.busy = false;
+      this.state = "idle";
       return;
     }
+    this.state = "flashing";
     try {
       await this.esp?.flash(this.flashArgs!);
     } catch (e) {
@@ -127,7 +133,7 @@ export default class App extends Vue {
     }
     await this.esp?.close();
     console.log("done");
-    this.busy = false;
+    this.state = "idle";
   }
 
   formatProgress(): string {
@@ -183,6 +189,7 @@ export default class App extends Vue {
 
 #app > .buttons {
   margin-top: 40px;
+  height: 50px;
 }
 
 .footer {
