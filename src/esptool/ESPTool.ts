@@ -8,6 +8,13 @@ import ESP32C3ROM from './ESP32C3ROM';
 
 import { IFlashArgs, IConnectEvent } from './';
 
+const LOADERS = [
+  ESP8266ROM,
+  ESP32ROM,
+  ESP32S2ROM,
+  ESP32C3ROM,
+];
+
 export default class ESPTool extends EventEmitter {
 
   serial: SerialPort | null = null;
@@ -25,7 +32,7 @@ export default class ESPTool extends EventEmitter {
       detector.start();
       await detector.connect();
       const chip_magic_value = await detector.read_reg(ESPLoader.CHIP_DETECT_MAGIC_REG_ADDR);
-      for (const cls of [ESP8266ROM, ESP32ROM, ESP32S2ROM, ESP32C3ROM]) {
+      for (const cls of LOADERS) {
         if (cls.CHIP_DETECT_MAGIC_VALUE.includes(chip_magic_value)) {
           this.loader = new cls(this.serial);
         }
