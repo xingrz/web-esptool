@@ -11,7 +11,8 @@
           class="uploader"
         >
           <p class="ant-upload-drag-icon">
-            <a-icon v-bind:type="file ? 'file-zip' : 'inbox'" />
+            <file-zip-outlined v-if="file" />
+            <inbox-outlined v-else />
           </p>
           <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
           <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
@@ -49,7 +50,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { Vue, Options } from "vue-class-component";
+import { message } from "ant-design-vue";
+import { InboxOutlined, FileZipOutlined } from "@ant-design/icons-vue";
 
 import unpack from "./unpack";
 import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
@@ -58,7 +61,12 @@ const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
 type IState = "idle" | "connecting" | "flashing";
 
-@Component
+@Options({
+  components: {
+    InboxOutlined,
+    FileZipOutlined,
+  },
+})
 export default class App extends Vue {
   file: File | null = null;
   progress: number | null = null;
@@ -75,7 +83,7 @@ export default class App extends Vue {
 
     this.esp.on("connect", ({ chip_description }: IConnectEvent) => {
       console.log(`Connected: ${chip_description}`);
-      this.$message.success(`已连接：${chip_description}`);
+      message.success(`已连接：${chip_description}`);
     });
 
     this.esp.on("progress", ({ index, blocks_written, blocks_total }) => {
@@ -91,15 +99,13 @@ export default class App extends Vue {
 
   async handleFile(file: File): Promise<void> {
     if (file.size >= MAX_FILE_SIZE) {
-      this.$message.error(
-        `文件过大: ${Math.round(file.size / 1024 / 1024)} MB`
-      );
+      message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
       return;
     }
 
     const flashArgs = await unpack(file);
     if (flashArgs == null) {
-      this.$message.error("该文件不是一个合法的固件包");
+      message.error("该文件不是一个合法的固件包");
       return;
     }
 
@@ -120,7 +126,7 @@ export default class App extends Vue {
       const serial = await navigator.serial.requestPort();
       await this.esp?.open(serial);
     } catch (e) {
-      this.$message.error("设备打开失败");
+      message.error("设备打开失败");
       this.state = "idle";
       return;
     }
@@ -129,7 +135,7 @@ export default class App extends Vue {
       await this.esp?.flash(this.flashArgs!);
     } catch (e) {
       console.error(e);
-      this.$message.error("烧录失败");
+      message.error("烧录失败");
     }
     await this.esp?.close();
     console.log("done");
