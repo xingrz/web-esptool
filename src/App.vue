@@ -1,50 +1,48 @@
 <template>
-  <div>
-    <div id="app">
-      <h1>Web ESPTool</h1>
-      <div class="author">by XiNGRZ</div>
-      <div class="main upload" v-if="progress == null">
-        <a-upload-dragger
-          accept=".zip"
-          v-bind:showUploadList="false"
-          v-bind:customRequest="({ file }) => handleFile(file)"
-          class="uploader"
-        >
-          <p class="ant-upload-drag-icon">
-            <file-zip-outlined v-if="file" />
-            <inbox-outlined v-else />
-          </p>
-          <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
-          <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
-        </a-upload-dragger>
-      </div>
-      <div class="main progress" v-if="progress != null">
-        <a-progress
-          type="circle"
-          v-bind:width="150"
-          v-bind:strokeWidth="4"
-          v-bind:percent="progress"
-          v-bind:status="progress >= 100 ? 'success' : 'active'"
-          v-bind:format="formatProgress"
-        />
-      </div>
-      <div class="buttons">
-        <a-button
-          size="large"
-          type="primary"
-          v-if="state != 'flashing'"
-          v-bind:disabled="!file"
-          v-bind:loading="state == 'connecting'"
-          v-on:click="start"
-          >开始烧录</a-button
-        >
-      </div>
+  <div class="content">
+    <h1>Web ESPTool</h1>
+    <div class="author">by XiNGRZ</div>
+    <div class="main upload" v-if="progress == null">
+      <a-upload-dragger
+        accept=".zip"
+        v-bind:showUploadList="false"
+        v-bind:customRequest="({ file }) => handleFile(file)"
+        class="uploader"
+      >
+        <p class="ant-upload-drag-icon">
+          <file-zip-outlined v-if="file" />
+          <inbox-outlined v-else />
+        </p>
+        <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
+        <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
+      </a-upload-dragger>
     </div>
-    <div class="footer">
-      <div>Copyright © 2021 XiNGRZ</div>
-      <div>
-        <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
-      </div>
+    <div class="main progress" v-if="progress != null">
+      <a-progress
+        type="circle"
+        v-bind:width="150"
+        v-bind:strokeWidth="4"
+        v-bind:percent="progress"
+        v-bind:status="progress >= 100 ? 'success' : 'active'"
+        v-bind:format="formatProgress"
+      />
+    </div>
+    <div class="buttons">
+      <a-button
+        size="large"
+        type="primary"
+        v-if="state != 'flashing'"
+        v-bind:disabled="!file"
+        v-bind:loading="state == 'connecting'"
+        v-on:click="start"
+        >开始烧录</a-button
+      >
+    </div>
+  </div>
+  <div class="footer">
+    <div>Copyright © 2021 XiNGRZ</div>
+    <div>
+      <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
     </div>
   </div>
 </template>
@@ -148,8 +146,14 @@ export default class App extends Vue {
 }
 </script>
 
-<style>
-#app {
+<style lang="scss">
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.content {
   width: 100vw;
   height: 90vh;
   min-height: 500px;
@@ -157,45 +161,45 @@ export default class App extends Vue {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
 
-#app > h1 {
-  font-size: 50px;
-  font-weight: 100;
-  line-height: 1;
-  margin-bottom: 0;
-}
+  > h1 {
+    font-size: 50px;
+    font-weight: 100;
+    line-height: 1;
+    margin-bottom: 0;
+  }
 
-#app > .author {
-  font-size: 18px;
-  font-weight: 300;
-  margin-bottom: 50px;
-}
+  > .author {
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 50px;
+  }
 
-#app > .main {
-  width: 90%;
-  height: 200px;
-  max-width: 400px;
-}
+  > .main {
+    width: 90%;
+    height: 200px;
+    max-width: 400px;
+  }
 
-#app > .upload .ant-upload-btn {
-  padding: 24px 16px 16px;
-}
+  > .upload .ant-upload-btn {
+    padding: 24px 16px 16px;
+  }
 
-#app > .upload .ant-upload-text.file {
-  font-family: monospace;
-}
+  > .upload .ant-upload-text.file {
+    font-family: monospace;
+  }
 
-#app > .progress {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
+  > .progress {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
 
-#app > .buttons {
-  margin-top: 40px;
-  height: 50px;
+  > .buttons {
+    margin-top: 40px;
+    height: 50px;
+  }
 }
 
 .footer {
