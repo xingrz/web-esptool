@@ -1,4 +1,5 @@
 <template>
+  <sonic-view :peak="peak" :level="level" :period="500" />
   <div class="content">
     <h1>Web ESPTool</h1>
     <div class="author">by XiNGRZ</div>
@@ -18,20 +19,14 @@
       </a-upload-dragger>
     </div>
     <div class="main progress" v-if="progress != null">
-      <a-progress
-        type="circle"
-        v-bind:width="150"
-        v-bind:strokeWidth="4"
-        v-bind:percent="progress"
-        v-bind:status="progress >= 100 ? 'success' : 'active'"
-        v-bind:format="formatProgress"
-      />
+      {{ Math.floor(progress || 0) }}%
     </div>
     <div class="buttons">
       <a-button
         size="large"
-        type="primary"
         v-if="state != 'flashing'"
+        v-bind:type="Math.floor(progress) == 100 ? 'default' : 'primary'"
+        v-bind:ghost="Math.floor(progress) == 100"
         v-bind:disabled="!file"
         v-bind:loading="state == 'connecting'"
         v-on:click="start"
@@ -52,6 +47,8 @@ import { Vue, Options } from "vue-class-component";
 import { message } from "ant-design-vue";
 import { InboxOutlined, FileZipOutlined } from "@ant-design/icons-vue";
 
+import SonicView from "./components/SonicView.vue";
+
 import unpack from "./unpack";
 import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
 
@@ -63,6 +60,7 @@ type IState = "idle" | "connecting" | "flashing";
   components: {
     InboxOutlined,
     FileZipOutlined,
+    SonicView,
   },
 })
 export default class App extends Vue {
@@ -91,7 +89,7 @@ export default class App extends Vue {
       }
       const progress =
         success + this.imageSizes[index] * (blocks_written / blocks_total);
-      this.progress = (progress / this.imageSizesTotal) * 100;
+      this.progress = Math.min(100, (progress / this.imageSizesTotal) * 100);
     });
   }
 
@@ -140,8 +138,18 @@ export default class App extends Vue {
     this.state = "idle";
   }
 
-  formatProgress(): string {
-    return this.progress! >= 100 ? "完成" : `${Math.floor(this.progress!)}%`;
+  get peak(): number {
+    if (this.state == "idle") return 0.1;
+    else if (this.state == "connecting") return 0.2;
+    else return 0.5;
+  }
+
+  get level(): number {
+    if (this.progress == null) {
+      return 0.02;
+    } else {
+      return 0.02 + this.progress / 100;
+    }
   }
 }
 </script>
@@ -194,6 +202,9 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    max-width: unset;
+    font-size: 100px;
+    font-weight: 100;
   }
 
   > .buttons {
