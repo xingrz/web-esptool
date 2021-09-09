@@ -139,17 +139,17 @@ export default class App extends Vue {
   }
 
   get peak(): number {
-    if (this.state == "flashing") return 0.5;
-    else if (this.state == "connecting") return 0.2;
-    else if (this.progress == null) return 0.1;
-    else return 0;
+    if (this.state == "flashing") return 0.7;
+    else if (this.state == "connecting") return 0.4;
+    else if (this.progress! >= 100) return 0;
+    else return 0.2;
   }
 
   get level(): number {
     if (this.progress == null) {
       return 0.02;
     } else {
-      return 0.1 + this.progress / 100;
+      return 0.02 + (this.progress / 100) * 1.1;
     }
   }
 }

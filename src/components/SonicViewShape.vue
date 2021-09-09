@@ -82,6 +82,6 @@ path {
   }
 
   animation: sonic var(--period) ease-in-out infinite both;
-  transition: transform 800ms ease-in-out;
+  transition: transform 700ms ease-in-out;
 }
 </style>
