@@ -1,5 +1,13 @@
 <template>
-  <path :d="path" :fill="color || '#000000'" />
+  <path
+    :style="{
+      '--d0': `path('${d0}')`,
+      '--d1': `path('${d1}')`,
+      '--period': `${shakedPeriod}ms`,
+      transform: `translateY(${translateY}px)`,
+    }"
+    :fill="color"
+  />
 </template>
 
 <script lang="ts">
@@ -7,12 +15,13 @@ import { Vue, Options } from "vue-class-component";
 
 @Options({
   props: {
-    width: Number,
-    height: Number,
-    wave: Number,
-    peak: Number,
-    level: Number,
-    color: String,
+    width: { type: Number, default: window.innerWidth },
+    height: { type: Number, default: window.innerHeight },
+    wave: { type: Number, default: 1 },
+    peak: { type: Number, default: 0.5 },
+    level: { type: Number, default: 0.5 },
+    color: { type: String, default: "#000000" },
+    period: { type: Number, default: 500 },
   },
 })
 export default class SonicViewShape extends Vue {
@@ -22,15 +31,28 @@ export default class SonicViewShape extends Vue {
   peak!: number;
   level!: number;
   color!: string;
+  period!: number;
 
-  get path(): string {
-    const wave = this.wave || 1;
-    const peak = this.peak || 0;
-    const level = this.level || 0.5;
-    const width = this.width || window.innerWidth;
-    const height = this.height || window.innerHeight;
+  get d0(): string {
+    return this.makePath(this.peak * 1);
+  }
 
-    const middle = height * (1 - level);
+  get d1(): string {
+    return this.makePath(this.peak * -1);
+  }
+
+  get shakedPeriod(): number {
+    return Math.round((this.period || 300) + 500 * Math.random());
+  }
+
+  get translateY(): number {
+    return this.height * (1 - this.level);
+  }
+
+  private makePath(peak: number): string {
+    const { wave, width, height } = this;
+
+    const middle = 0;
     const split = width / wave;
 
     const path = [`M 0 ${middle}`];
@@ -48,3 +70,17 @@ export default class SonicViewShape extends Vue {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+path {
+  d: var(--d0);
+  @keyframes sonic {
+    50% {
+      d: var(--d1);
+    }
+  }
+
+  animation: sonic var(--period) ease-in-out infinite both;
+  transition: transform 800ms ease-in-out;
+}
+</style>
