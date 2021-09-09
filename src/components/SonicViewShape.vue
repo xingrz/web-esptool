@@ -54,17 +54,18 @@ export default class SonicViewShape extends Vue {
 
     const middle = 0;
     const split = width / wave;
+    const offset = split * Math.random();
 
-    const path = [`M 0 ${middle}`];
+    const path = [`M ${-offset} ${middle}`];
 
-    for (let i = 0; i < wave; i++) {
+    for (let i = 0; i < wave + 1; i++) {
       const l = split * 0.25 * peak * (i % 2 ? 1 : -1);
-      const c = `${split * (i + 0.5)} ${middle + l}`;
-      const e = `${split * (i + 1.0)} ${middle}`;
+      const c = `${split * (i + 0.5) - offset} ${middle + l}`;
+      const e = `${split * (i + 1.0) - offset} ${middle}`;
       path.push(`C ${c}, ${c}, ${e}`);
     }
 
-    path.push(`L ${width} ${height} L 0 ${height} Z`);
+    path.push(`L ${width} ${height * 2} L 0 ${height * 2} Z`);
 
     return path.join(" ");
   }
