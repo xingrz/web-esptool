@@ -1,6 +1,8 @@
 <template>
   <svg class="sonic">
     <sonic-view-shape
+      :width="width"
+      :height="height"
       :peak="peak"
       :wave="2"
       :level="level"
@@ -9,6 +11,8 @@
     />
 
     <sonic-view-shape
+      :width="width"
+      :height="height"
       :peak="peak"
       :wave="3"
       :level="level"
@@ -17,6 +21,8 @@
     />
 
     <sonic-view-shape
+      :width="width"
+      :height="height"
       :peak="peak"
       :wave="4"
       :level="level"
@@ -44,6 +50,22 @@ export default class SonicView extends Vue {
   peak!: number;
   level!: number;
   period!: number;
+
+  width = window.innerWidth;
+  height = window.innerHeight;
+
+  mounted(): void {
+    window.addEventListener("resize", this.onResize, false);
+  }
+
+  beforeUnmount(): void {
+    window.removeEventListener("resize", this.onResize, false);
+  }
+
+  onResize(): void {
+    this.width = window.innerWidth;
+    this.height = window.innerHeight;
+  }
 }
 </script>
 
