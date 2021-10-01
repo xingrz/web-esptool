@@ -3,70 +3,54 @@
     <sonic-view-shape
       :width="width"
       :height="height"
-      :peak="peak"
+      :peak="props.peak"
       :wave="Math.round((width / 640) * 2)"
-      :level="level"
-      :period="period"
+      :level="props.level"
+      :period="props.period"
       color="#50E3C2FF"
     />
 
     <sonic-view-shape
       :width="width"
       :height="height"
-      :peak="peak"
+      :peak="props.peak"
       :wave="Math.round((width / 640) * 3)"
-      :level="level"
-      :period="period"
+      :level="props.level"
+      :period="props.period"
       color="#46DBBAB2"
     />
 
     <sonic-view-shape
       :width="width"
       :height="height"
-      :peak="peak"
+      :peak="props.peak"
       :wave="Math.round((width / 640) * 5)"
-      :level="level"
-      :period="period"
+      :level="props.level"
+      :period="props.period"
       color="#47CCC2CC"
     />
   </svg>
 </template>
 
-<script lang="ts">
-import { Vue, Options } from "vue-class-component";
+<script lang="ts" setup>
+import { defineProps, ref } from "vue";
+import useOnWindowResize from "@/composables/useOnWindowResize";
+
 import SonicViewShape from "./SonicViewShape.vue";
 
-@Options({
-  props: {
-    peak: Number,
-    level: Number,
-    period: Number,
-  },
-  components: {
-    SonicViewShape,
-  },
-})
-export default class SonicView extends Vue {
-  peak!: number;
-  level!: number;
-  period!: number;
+const props = defineProps<{
+  peak: number;
+  level: number;
+  period: number;
+}>();
 
-  width = window.innerWidth;
-  height = window.innerHeight;
+const width = ref(window.innerWidth);
+const height = ref(window.innerHeight);
 
-  mounted(): void {
-    window.addEventListener("resize", this.onResize, false);
-  }
-
-  beforeUnmount(): void {
-    window.removeEventListener("resize", this.onResize, false);
-  }
-
-  onResize(): void {
-    this.width = window.innerWidth;
-    this.height = window.innerHeight;
-  }
-}
+useOnWindowResize(() => {
+  width.value = window.innerWidth;
+  height.value = window.innerHeight;
+});
 </script>
 
 <style lang="scss" scoped>

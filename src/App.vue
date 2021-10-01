@@ -6,32 +6,32 @@
     <div class="main upload" v-if="progress == null">
       <a-upload-dragger
         accept=".zip"
-        v-bind:showUploadList="false"
-        v-bind:customRequest="({ file }) => handleFile(file)"
+        :showUploadList="false"
+        :customRequest="({ file }: { file: File }) => handleFile(file)"
         class="uploader"
       >
         <p class="ant-upload-drag-icon">
-          <file-zip-outlined v-if="file" />
+          <file-zip-outlined v-if="selected" />
           <inbox-outlined v-else />
         </p>
-        <p class="ant-upload-text file" v-if="file">{{ file.name }}</p>
+        <p class="ant-upload-text file" v-if="selected">{{ selected.name }}</p>
         <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
       </a-upload-dragger>
     </div>
-    <div class="main progress" v-if="progress != null">
-      {{ Math.floor(progress || 0) }}%
-    </div>
+    <div
+      class="main progress"
+      v-if="progress != null"
+    >{{ Math.floor(progress || 0) }}%</div>
     <div class="buttons">
       <a-button
         size="large"
         v-if="state != 'flashing'"
-        v-bind:type="Math.floor(progress) == 100 ? 'default' : 'primary'"
-        v-bind:ghost="Math.floor(progress) == 100"
-        v-bind:disabled="!file"
-        v-bind:loading="state == 'connecting'"
-        v-on:click="start"
-        >开始烧录</a-button
-      >
+        :type="progress != null && Math.floor(progress) == 100 ? 'default' : 'primary'"
+        :ghost="progress != null && Math.floor(progress) == 100"
+        :disabled="!selected"
+        :loading="state == 'connecting'"
+        @click="start"
+      >开始烧录</a-button>
     </div>
   </div>
   <div class="footer">
@@ -42,8 +42,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Vue, Options } from "vue-class-component";
+<script lang="ts" setup>
+import { computed, ref } from "vue";
 import { message } from "ant-design-vue";
 import { InboxOutlined, FileZipOutlined } from "@ant-design/icons-vue";
 
@@ -56,102 +56,85 @@ const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
 type IState = "idle" | "connecting" | "flashing";
 
-@Options({
-  components: {
-    InboxOutlined,
-    FileZipOutlined,
-    SonicView,
-  },
-})
-export default class App extends Vue {
-  file: File | null = null;
-  progress: number | null = null;
-  imageSizes: number[] = [];
-  imageSizesTotal = 0;
+const selected = ref<File | null>(null);
+const progress = ref<number | null>(null);
+const state = ref<IState>("idle");
 
-  state: IState = "idle";
+let flashArgs: IFlashArgs | null = null;
 
-  flashArgs?: IFlashArgs;
-  esp?: ESPTool;
+let imageSizes: number[] = [];
+let imageSizesTotal = 0;
 
-  mounted(): void {
-    this.esp = new ESPTool();
+const peak = computed(() => {
+  if (state.value == "flashing") return 0.7;
+  else if (state.value == "connecting") return 0.4;
+  else if (progress.value != null && progress.value >= 100) return 0;
+  else return 0.2;
+});
 
-    this.esp.on("connect", ({ chip_description }: IConnectEvent) => {
-      console.log(`Connected: ${chip_description}`);
-      message.success(`已连接：${chip_description}`);
-    });
+const level = computed(() => {
+  if (progress.value == null) {
+    return 0.02;
+  } else {
+    return 0.02 + (progress.value / 100) * 1.1;
+  }
+});
 
-    this.esp.on("progress", ({ index, blocks_written, blocks_total }) => {
-      let success = 0;
-      for (let i = 0; i < index; i++) {
-        success += this.imageSizes[i];
-      }
-      const progress =
-        success + this.imageSizes[index] * (blocks_written / blocks_total);
-      this.progress = Math.min(100, (progress / this.imageSizesTotal) * 100);
-    });
+const esp = new ESPTool();
+
+esp.on("connect", ({ chip_description }: IConnectEvent) => {
+  console.log(`Connected: ${chip_description}`);
+  message.success(`已连接：${chip_description}`);
+});
+
+esp.on("progress", ({ index, blocks_written, blocks_total }) => {
+  let success = 0;
+  for (let i = 0; i < index; i++) {
+    success += imageSizes[i];
+  }
+  const p = success + imageSizes[index] * (blocks_written / blocks_total);
+  progress.value = Math.min(100, (p / imageSizesTotal) * 100);
+});
+
+async function handleFile(file: File): Promise<void> {
+  if (file.size >= MAX_FILE_SIZE) {
+    message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
+    return;
   }
 
-  async handleFile(file: File): Promise<void> {
-    if (file.size >= MAX_FILE_SIZE) {
-      message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
-      return;
-    }
-
-    const flashArgs = await unpack(file);
-    if (flashArgs == null) {
-      message.error("该文件不是一个合法的固件包");
-      return;
-    }
-
-    this.file = file;
-    this.flashArgs = flashArgs;
-
-    this.imageSizes = flashArgs.partitions.map(({ image }) => image.length);
-    this.imageSizesTotal = this.imageSizes.reduce(
-      (total, size) => total + size,
-      0
-    );
+  flashArgs = await unpack(file);
+  if (flashArgs == null) {
+    message.error("该文件不是一个合法的固件包");
+    return;
   }
 
-  async start(): Promise<void> {
-    this.state = "connecting";
-    this.progress = 0;
-    try {
-      const serial = await navigator.serial.requestPort();
-      await this.esp?.open(serial);
-    } catch (e) {
-      message.error("设备打开失败");
-      this.state = "idle";
-      return;
-    }
-    this.state = "flashing";
-    try {
-      await this.esp?.flash(this.flashArgs!);
-    } catch (e) {
-      console.error(e);
-      message.error("烧录失败");
-    }
-    await this.esp?.close();
-    console.log("done");
-    this.state = "idle";
-  }
+  selected.value = file;
 
-  get peak(): number {
-    if (this.state == "flashing") return 0.7;
-    else if (this.state == "connecting") return 0.4;
-    else if (this.progress! >= 100) return 0;
-    else return 0.2;
-  }
+  imageSizes = flashArgs.partitions.map(({ image }) => image.length);
+  imageSizesTotal = imageSizes.reduce((total, size) => total + size, 0);
+}
 
-  get level(): number {
-    if (this.progress == null) {
-      return 0.02;
-    } else {
-      return 0.02 + (this.progress / 100) * 1.1;
-    }
+async function start(): Promise<void> {
+  state.value = "connecting";
+  progress.value = 0;
+  try {
+    const serial = await navigator.serial.requestPort();
+    await esp.open(serial);
+  } catch (e) {
+    message.error("设备打开失败");
+    state.value = "idle";
+    return;
   }
+  state.value = "flashing";
+  try {
+    await esp.flash(flashArgs!);
+  } catch (e) {
+    console.error(e);
+    message.error("烧录失败");
+  }
+  await esp.close();
+  console.log("done");
+  state.value = "idle";
 }
 </script>
 
