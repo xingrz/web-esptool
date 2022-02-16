@@ -22,6 +22,18 @@
       class="main progress"
       v-if="progress != null"
     >{{ Math.floor(progress || 0) }}%</div>
+    <div class="select" v-if="mfgImages.length">
+      量产数据：
+      <a-select
+        :value="selectMfg"
+        :disabled="state != 'idle'"
+        @change="selectMfgChange"
+        style="width: 320px">
+        <a-select-option v-for="image in mfgImages" :key="image">
+          {{ image }}
+        </a-select-option>
+      </a-select>
+    </div>
     <div class="buttons">
       <a-button
         size="large"
@@ -49,7 +61,7 @@ import { InboxOutlined, FileZipOutlined } from "@ant-design/icons-vue";
 
 import SonicView from "./components/SonicView.vue";
 
-import unpack from "./unpack";
+import unpack, {IMfgConfig} from "./unpack";
 import ESPTool, { IConnectEvent, IFlashArgs } from "./esptool";
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
@@ -59,11 +71,15 @@ type IState = "idle" | "connecting" | "flashing";
 const selected = ref<File | null>(null);
 const progress = ref<number | null>(null);
 const state = ref<IState>("idle");
+const mfgImages = ref<string[]>([]);
+const selectMfg = ref<string | null>(null);
 
 let flashArgs: IFlashArgs | null = null;
+let mfgConfig: IMfgConfig | null = null;
 
 let imageSizes: number[] = [];
 let imageSizesTotal = 0;
+let imageSizesOriginTotal = 0;
 
 const peak = computed(() => {
   if (state.value == "flashing") return 0.7;
@@ -102,7 +118,9 @@ async function handleFile(file: File): Promise<void> {
     return;
   }
 
-  flashArgs = await unpack(file);
+  const { flashArgs : foo, mfgConfig: bar } = await unpack(file);
+  flashArgs = foo;
+  mfgConfig = bar;
   if (flashArgs == null) {
     message.error("该文件不是一个合法的固件包");
     return;
@@ -110,8 +128,20 @@ async function handleFile(file: File): Promise<void> {
 
   selected.value = file;
 
+  mfgImages.value = [];
+  for (const name in mfgConfig?.images) {
+    mfgImages.value.push(name);
+  }
+  if (mfgImages.value.length > 0) {
+    selectMfg.value = mfgImages.value[0];
+  }
+
   imageSizes = flashArgs.partitions.map(({ image }) => image.length);
-  imageSizesTotal = imageSizes.reduce((total, size) => total + size, 0);
+  imageSizesOriginTotal = imageSizesTotal = imageSizes.reduce((total, size) => total + size, 0);
+}
+
+function selectMfgChange(value: string): void {
+  selectMfg.value = value;
 }
 
 async function start(): Promise<void> {
@@ -127,12 +157,43 @@ async function start(): Promise<void> {
   }
   state.value = "flashing";
   try {
-    await esp.flash(flashArgs!);
+    if (flashArgs != null && mfgConfig != null && selectMfg.value != null) {
+      let args: IFlashArgs = {
+        flashMode: flashArgs.flashMode,
+        flashFreq: flashArgs.flashFreq,
+        flashSize: flashArgs.flashSize,
+        partitions: [],
+      };
+      for (const n in flashArgs.partitions) {
+        args.partitions.push(flashArgs.partitions[n]);
+      }
+      if (mfgConfig.images[selectMfg.value]) {
+        args.partitions.push({address: mfgConfig.address, image: mfgConfig.images[selectMfg.value]});
+        imageSizesTotal = imageSizesOriginTotal + mfgConfig.images[selectMfg.value].length;
+      }
+      await esp.flash(args);
+    } else {
+      await esp.flash(flashArgs!);
+    }
   } catch (e) {
     console.error(e);
     message.error("烧录失败");
   }
   await esp.close();
+  if (selectMfg.value != null) {
+    for (let n in mfgImages.value) {
+      if (selectMfg.value == mfgImages.value[n]) {
+        n++;
+        if (n < mfgImages.value.length) {
+          selectMfg.value = mfgImages.value[n];
+          message.info("已切换量产数据 " + selectMfg.value);
+        } else {
+          message.warn("已烧录完最后一个量产数据。");
+        }
+        break;
+      }
+    }
+  }
   console.log("done");
   state.value = "idle";
 }
@@ -189,6 +250,10 @@ body {
     max-width: unset;
     font-size: 100px;
     font-weight: 100;
+  }
+
+  > .select {
+    margin-top: 40px;
   }
 
   > .buttons {
