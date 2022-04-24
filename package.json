@@ -9,17 +9,17 @@
     "test": "jest"
   },
   "dependencies": {
-    "@ant-design/icons-vue": "^6.0.1",
-    "ant-design-vue": "^2.2.6",
+    "@ant-design/icons-vue": "^6.1.0",
+    "ant-design-vue": "^3.2.0",
     "assert": "^2.0.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^5.7.1",
-    "core-js": "^3.17.2",
+    "core-js": "^3.22.2",
     "pond": "^2.0.1",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.4",
-    "vue": "^3.2.19",
+    "vue": "^3.2.33",
     "yauzl": "^2.10.0"
   },
   "devDependencies": {

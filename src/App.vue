@@ -163,6 +163,9 @@ async function start(): Promise<void> {
 
   .upload {
     :global(.ant-upload-btn) {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       padding: 24px 16px 16px;
     }
 
