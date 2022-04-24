@@ -6,28 +6,30 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
 
-      - uses: actions/setup-node@v2
+      - uses: benjlevesque/short-sha@v1.2
+        id: short-sha
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
           node-version: '16'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run tests
         run: npm test
 
       - name: Build
         run: npm run build
-
-      - uses: benjlevesque/short-sha@v1.2
-        id: short-sha
 
       - name: Publish
         uses: crazy-max/ghaction-github-pages@v2
