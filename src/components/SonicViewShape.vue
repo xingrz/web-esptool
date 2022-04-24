@@ -1,9 +1,9 @@
 <template>
-  <path :style="style" :fill="color" />
+  <path :class="$style.path" :style="style" :fill="color" />
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, withDefaults } from "vue";
+import { computed, defineProps, withDefaults } from 'vue';
 
 const props = withDefaults(defineProps<{
   width?: number;
@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
   wave: 1,
   peak: 0.5,
   level: 0.5,
-  color: "#000000",
+  color: '#000000',
   period: 300,
 });
 
@@ -55,13 +55,14 @@ function makePath(peak: number): string {
 
   path.push(`L ${width} ${height * 2} L 0 ${height * 2} Z`);
 
-  return path.join(" ");
+  return path.join(' ');
 }
 </script>
 
-<style lang="scss" scoped>
-path {
+<style lang="scss" module>
+.path {
   d: var(--d0);
+
   @keyframes sonic {
     50% {
       d: var(--d1);

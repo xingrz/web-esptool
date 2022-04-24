@@ -1,42 +1,21 @@
 <template>
-  <svg class="sonic">
-    <sonic-view-shape
-      :width="width"
-      :height="height"
-      :peak="props.peak"
-      :wave="Math.round((width / 640) * 2)"
-      :level="props.level"
-      :period="props.period"
-      color="#50E3C2FF"
-    />
+  <svg :class="$style.sonic">
+    <sonic-view-shape :width="width" :height="height" :peak="props.peak" :wave="Math.round((width / 640) * 2)"
+      :level="props.level" :period="props.period" color="#50E3C2FF" />
 
-    <sonic-view-shape
-      :width="width"
-      :height="height"
-      :peak="props.peak"
-      :wave="Math.round((width / 640) * 3)"
-      :level="props.level"
-      :period="props.period"
-      color="#46DBBAB2"
-    />
+    <sonic-view-shape :width="width" :height="height" :peak="props.peak" :wave="Math.round((width / 640) * 3)"
+      :level="props.level" :period="props.period" color="#46DBBAB2" />
 
-    <sonic-view-shape
-      :width="width"
-      :height="height"
-      :peak="props.peak"
-      :wave="Math.round((width / 640) * 5)"
-      :level="props.level"
-      :period="props.period"
-      color="#47CCC2CC"
-    />
+    <sonic-view-shape :width="width" :height="height" :peak="props.peak" :wave="Math.round((width / 640) * 5)"
+      :level="props.level" :period="props.period" color="#47CCC2CC" />
   </svg>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, ref } from "vue";
-import useOnWindowResize from "@/composables/useOnWindowResize";
+import { defineProps, ref } from 'vue';
+import useOnWindowResize from '@/composables/useOnWindowResize';
 
-import SonicViewShape from "./SonicViewShape.vue";
+import SonicViewShape from './SonicViewShape.vue';
 
 const props = defineProps<{
   peak: number;
@@ -53,7 +32,7 @@ useOnWindowResize(() => {
 });
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" module>
 .sonic {
   width: 100vw;
   height: 100vh;
