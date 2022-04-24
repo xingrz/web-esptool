@@ -23,7 +23,7 @@
     </div>
   </div>
   <div :class="$style.footer">
-    <div>Copyright © 2021 XiNGRZ</div>
+    <div>Copyright © 2021-2022 XiNGRZ</div>
     <div>
       <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
     </div>
