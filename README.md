@@ -16,12 +16,15 @@ npm run serve
 
 - [x] Auto program
 - [x] Stub loader
-- [x] ESP8266/ESP8285
-- [x] ESP32
-- [x] ESP32-S2
-- [x] ESP32-C3
 - [x] Compression
 - [ ] Encryption
+- [x] ESP8266 / ESP8285
+- [x] ESP32
+- [x] ESP32-S2
+- [ ] ESP32-S3
+- [ ] ESP32-C2 / ESP8684
+- [x] ESP32-C3 / ESP8685
+- [ ] ESP32-C6
 
 ## Links
 
