@@ -20,6 +20,9 @@ export default class ESP32ROM extends ESPLoader {
     '4MB': 0x20,
     '8MB': 0x30,
     '16MB': 0x40,
+    '32MB': 0x50,
+    '64MB': 0x60,
+    '128MB': 0x70,
   };
 
   BOOTLOADER_FLASH_OFFSET = 0x1000;
