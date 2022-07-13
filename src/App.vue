@@ -4,8 +4,7 @@
     <h1>Web ESPTool</h1>
     <div :class="$style.author">by XiNGRZ</div>
     <div :class="[$style.main, $style.upload]" v-if="progress == null">
-      <a-upload-dragger accept=".zip" :showUploadList="false"
-        :customRequest="({ file }: { file: File }) => handleFile(file)" :class="$style.upload">
+      <a-upload-dragger accept=".zip" :showUploadList="false" :customRequest="handleFile" :class="$style.upload">
         <p class="ant-upload-drag-icon">
           <file-zip-outlined v-if="selected" />
           <inbox-outlined v-else />
@@ -84,7 +83,7 @@ esp.on('progress', ({ index, blocks_written, blocks_total }) => {
   progress.value = Math.min(100, (p / imageSizesTotal) * 100);
 });
 
-async function handleFile(file: File): Promise<void> {
+async function handleFile({ file }: { file: File }): Promise<void> {
   if (file.size >= MAX_FILE_SIZE) {
     message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
     return;
