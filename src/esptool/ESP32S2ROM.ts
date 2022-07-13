@@ -8,7 +8,6 @@ export default class ESP32S2ROM extends ESP32ROM {
   CHIP_NAME = 'ESP32-S2';
 
   EFUSE_BASE = 0x3f41A000;
-  EFUSE_BLK0 = this.EFUSE_BASE + 0x030;
   EFUSE_BLK1 = this.EFUSE_BASE + 0x044;
 
   STUB_CLASS = ESP32S2StubLoader;
@@ -18,18 +17,25 @@ export default class ESP32S2ROM extends ESP32ROM {
     return stub;
   }
 
-  async get_pkg_version(): Promise<number> {
-    // EFUSE_BLK1, 117, 4, PKG_VERSION
+  async get_flash_version(): Promise<number> {
+    // EFUSE_BLK1, 117, 4, FLASH_VERSION
     const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
     return (word3 >> 21) & 0x0F;
   }
 
+  async get_psram_version(): Promise<number> {
+    // EFUSE_BLK1, 124, 4, PSRAM_VERSION
+    const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
+    return (word3 >> 28) & 0x0F;
+  }
+
   async get_chip_description(): Promise<string> {
     return {
-      0: 'ESP32-S2',
-      1: 'ESP32-S2FH16',
-      2: 'ESP32-S2FH32',
-    }[await this.get_pkg_version()] || 'unknown ESP32-S2';
+      1: 'ESP32-S2FH2',
+      2: 'ESP32-S2FH4',
+      102: 'ESP32-S2FNR2',
+      100: 'ESP32-S2R2',
+    }[(await this.get_flash_version()) + (await this.get_psram_version()) * 100] || 'unknown ESP32-S2';
   }
 
 }
