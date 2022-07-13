@@ -75,6 +75,7 @@ export default class ESP32ROM extends ESPLoader {
       4: 'ESP32-U4WDH',
       5: rev3 ? 'ESP32-PICO-V3' : 'ESP32-PICO-D4',
       6: 'ESP32-PICO-V3-02',
+      7: "ESP32-D0WDR2-V3",
     }[pkg_version] || 'unknown ESP32';
 
     if (chip_name.startsWith('ESP32-D0WD') && rev3) {
