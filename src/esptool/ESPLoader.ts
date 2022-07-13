@@ -1,6 +1,6 @@
-import { promisify } from 'util';
+import promisify from 'pify';
+import { zlib as _zlib, unzlib as _unzlib } from 'fflate';
 import EventEmitter from 'events';
-import zlib from 'zlib';
 import hex from './utils/hex';
 import once from './utils/once';
 import sleep from './utils/sleep';
@@ -8,8 +8,8 @@ import pack from './utils/pack';
 import unpack from './utils/unpack';
 import { IFlashArgs } from './';
 
-const unzip = promisify(zlib.unzip);
-const deflate = promisify(zlib.deflate);
+const zlib = promisify(_zlib);
+const unzlib = promisify(_unzlib);
 
 const DTR = 'dataTerminalReady';
 const RTS = 'requestToSend';
@@ -450,7 +450,7 @@ export default class ESPLoader {
     for (const field of ['text', 'data']) {
       if (!stub[field]) continue;
       const offs = stub[`${field}_start`] as number;
-      const code = await unzip(Buffer.from(stub[field] as string, 'base64'));
+      const code = await unzlib(Buffer.from(stub[field] as string, 'base64'));
       const blocks = Math.floor((code.length + this.ESP_RAM_BLOCK - 1) / this.ESP_RAM_BLOCK);
       await this.mem_begin(code.length, blocks, this.ESP_RAM_BLOCK, offs);
       for (let seq = 0; seq < blocks; seq++) {
@@ -529,7 +529,7 @@ export default class ESPLoader {
       let blocks;
       if (this.COMPRESS) {
         const uncsize = image.length;
-        image = await deflate(image, { level: 9 });
+        image = await zlib(image, { level: 9 });
         blocks = await this.flash_defl_begin(uncsize, image.length, address);
       } else {
         blocks = await this.flash_begin(image.length, address);

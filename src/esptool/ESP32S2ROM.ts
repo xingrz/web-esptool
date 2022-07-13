@@ -14,10 +14,8 @@ export default class ESP32S2ROM extends ESP32ROM {
   STUB_CLASS = ESP32S2StubLoader;
 
   async load_stub(): Promise<IStub | null> {
-    return await import(
-      /* webpackChunkName: 'stub_flasher_32s2' */
-      './stubs/stub_flasher_32s2.elf'
-    );
+    const { default: stub } = await import('./stubs/stub_flasher_32s2.elf');
+    return stub;
   }
 
   async get_pkg_version(): Promise<number> {

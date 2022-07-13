@@ -1,8 +1,13 @@
-import unzip from './unzip';
+import promisify from 'pify';
+import { unzip as _unzip } from 'fflate';
+
 import { IFlashArgs, IFlashMode } from '@/esptool';
 
+const unzip = promisify(_unzip);
+
 export default async function unpack(file: File): Promise<IFlashArgs | null> {
-  const entries = await unzip(file);
+  const buffer = await file.arrayBuffer();
+  const entries = await unzip(new Uint8Array(buffer));
 
   const { dir, content } = findFlashArgs(entries) || {};
   if (!content) {
@@ -21,18 +26,19 @@ export default async function unpack(file: File): Promise<IFlashArgs | null> {
     partitions: [],
   };
 
+  const prefix = dir ? `${dir}/` : '';
   for (let i = 0; i < args.length - 1; i++) {
     if (args[i] == '--flash_mode') {
       flashArgs.flashMode = args[i + 1] as IFlashMode;
     } else if (args[i].match(/^0x([A-Fa-f0-9]+)$/)) {
       const address = parseInt(RegExp.$1, 16);
-      const key = `${dir}/${args[i + 1]}`;
+      const key = `${prefix}${args[i + 1]}`;
       if (entries[key]) {
         flashArgs.partitions.push({ address, image: entries[key] });
       }
     } else if (args[i].match(/^([0-9]+)$/)) {
       const address = parseInt(RegExp.$1);
-      const key = `${dir}/${args[i + 1]}`;
+      const key = `${prefix}${args[i + 1]}`;
       if (entries[key]) {
         flashArgs.partitions.push({ address, image: entries[key] });
       }
@@ -44,7 +50,7 @@ export default async function unpack(file: File): Promise<IFlashArgs | null> {
 
 function findFlashArgs(entries: Record<string, Buffer>): { dir: string, content: Buffer } | null {
   for (const name in entries) {
-    if (name.match(/^(.*)\/flash_args$/)) {
+    if (name.match(/^(.*\/)*flash_args$/)) {
       return {
         dir: RegExp.$1,
         content: entries[name],
