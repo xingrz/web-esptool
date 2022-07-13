@@ -5,6 +5,7 @@ import ESP8266ROM from './ESP8266ROM';
 import ESP32ROM from './ESP32ROM';
 import ESP32S2ROM from './ESP32S2ROM';
 import ESP32S3ROM from './ESP32S3ROM';
+import ESP32C2ROM from './ESP32C2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
 
 import { IFlashArgs, IConnectEvent } from './';
@@ -18,6 +19,7 @@ const LOADERS = [
   ESP32ROM,
   ESP32S2ROM,
   ESP32S3ROM,
+  ESP32C2ROM,
   ESP32C3ROM,
 ];
 
