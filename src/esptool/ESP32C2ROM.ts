@@ -25,16 +25,17 @@ export default class ESP32C2ROM extends ESP32C3ROM {
   }
 
   async get_chip_revision(): Promise<number> {
-    // FIXME
-    return 0;
+    const si = await this.get_security_info();
+    return si.api_version!;
   }
 
   async get_chip_description(): Promise<string> {
     const chip_name = {
       0: 'ESP32-C2',
     }[await this.get_pkg_version()] || 'unknown ESP32-C3';
+    const chip_revision = await this.get_chip_revision();
 
-    return chip_name;
+    return `${chip_name} (revision ${chip_revision})`;
   }
 
 }
