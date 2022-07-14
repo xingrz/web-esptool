@@ -69,7 +69,7 @@ export default class ESPLoader {
     // if we had more data than just the status bytes, return it as the result
     // (this is used by the md5sum command, maybe other commands ?)
     if (data.length > this.STATUS_BYTES_LENGTH) {
-      return data.slice(this.STATUS_BYTES_LENGTH);
+      return data.slice(0, data.length - this.STATUS_BYTES_LENGTH);
     } else {
       // otherwise, just return the 'val' field which comes from the reply header(this is used by read_reg)
       return val;
