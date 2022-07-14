@@ -21,11 +21,12 @@
         @click="start">开始烧录</a-button>
     </div>
   </div>
-  <div :class="$style.footer">
-    <div>Copyright © 2021-2022 XiNGRZ</div>
-    <div>
-      <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
-    </div>
+  <div :class="{ [$style.footer]: true, [$style.inverted]: (progress || 0) > 10 }">
+    <span>© 2021-2022 XiNGRZ</span>
+    <a-divider type="vertical" />
+    <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
+    <a-divider type="vertical" />
+    <a href="https://github.com/xingrz/web-esptool/wiki">固件格式说明</a>
   </div>
 </template>
 
@@ -190,8 +191,27 @@ async function start(): Promise<void> {
 }
 
 .footer {
-  opacity: 0.5;
+  opacity: 0.6;
   font-size: 12px;
   text-align: center;
+
+  color: #000;
+  transition: color 500ms;
+
+  a {
+    color: #599;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &.inverted {
+    color: #FFF;
+
+    a {
+      color: #FFD;
+    }
+  }
 }
 </style>
