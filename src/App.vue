@@ -4,7 +4,7 @@
     <h1>Web ESPTool</h1>
     <div :class="$style.author">by XiNGRZ</div>
     <div :class="[$style.main, $style.upload]" v-if="progress == null">
-      <a-upload-dragger accept=".zip" :showUploadList="false" :customRequest="handleFile" :class="$style.upload">
+      <a-upload-dragger accept=".zip,.hex" :showUploadList="false" :customRequest="handleFile" :class="$style.upload">
         <p class="ant-upload-drag-icon">
           <file-zip-outlined v-if="selected" />
           <inbox-outlined v-else />
@@ -37,7 +37,8 @@ import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
 
 import SonicView from './components/SonicView.vue';
 
-import unpack from './unpack';
+import readHex from './unpack/readHex';
+import readZip from './unpack/readZip';
 import ESPTool, { IConnectEvent, IFlashArgs } from './esptool';
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
@@ -90,7 +91,13 @@ async function handleFile({ file }: { file: File }): Promise<void> {
     return;
   }
 
-  flashArgs = await unpack(file);
+  const name = file.name.toLocaleLowerCase();
+  if (name.endsWith('.hex')) {
+    flashArgs = await readHex(file);
+  } else if (name.endsWith('.zip')) {
+    flashArgs = await readZip(file);
+  }
+
   if (flashArgs == null) {
     message.error('该文件不是一个合法的固件包');
     return;

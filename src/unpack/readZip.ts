@@ -5,7 +5,7 @@ import { IFlashArgs, IFlashMode } from '@/esptool';
 
 const unzip = promisify(_unzip);
 
-export default async function unpack(file: File): Promise<IFlashArgs | null> {
+export default async function readZip(file: File): Promise<IFlashArgs | null> {
   const buffer = await file.arrayBuffer();
   const entries = await unzip(new Uint8Array(buffer));
 
