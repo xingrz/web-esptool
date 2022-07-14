@@ -86,7 +86,7 @@ export default class SlipReader extends EventEmitter {
     }
   }
 
-  async command(op: Command, data: Buffer, chk = 0, timeout = 500, tries = 5): Promise<IResponse> {
+  async command(op: Command, data = Buffer.alloc(0), chk = 0, timeout = 500, tries = 5): Promise<IResponse> {
     this._trace(`> req op=${hex(op)} len=${data.length} data=${data.toString('hex')}`);
 
     const hdr = Buffer.alloc(8);

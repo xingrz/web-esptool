@@ -10,12 +10,23 @@ const RTS = 'requestToSend';
 // Device PIDs
 const USB_JTAG_SERIAL_PID = 0x1001;
 
+const SECURITY_INFO_BYTES_ESP32S2 = 12;
+const SECURITY_INFO_BYTES_ESP32S3_OR_LATER = 20;
+
 interface IResponse {
   val: number;
   data: Buffer;
 }
 
 export type IStub = Record<string, string | number>;
+
+export interface ISecurityInfo {
+  flags: number;
+  flash_crypt_cnt: number;
+  key_purposes: Buffer;
+  chip_id: number | undefined;
+  api_version: number | undefined;
+}
 
 export default class ESPLoader {
 
@@ -188,6 +199,22 @@ export default class ESPLoader {
 
   async get_chip_description(): Promise<string> {
     throw new Error('Not supported');
+  }
+
+  async get_security_info(): Promise<ISecurityInfo> {
+    const res = this.check(await this.reader.command(Command.ESP_GET_SECURITY_INFO)) as Buffer;
+    if (!Buffer.isBuffer(res)) {
+      throw new Error('Failed getting security info');
+    }
+
+    const s2 = res.length == SECURITY_INFO_BYTES_ESP32S2;
+    return {
+      flags: res.readUInt32LE(0),
+      flash_crypt_cnt: res.readUInt8(4),
+      key_purposes: res.slice(5, 12),
+      chip_id: s2 ? undefined : res.readUInt32LE(12),
+      api_version: s2 ? undefined : res.readUInt32LE(16),
+    };
   }
 
   get_erase_size(_offset: number, size: number): number {
