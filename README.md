@@ -21,9 +21,9 @@ npm run serve
 - [x] ESP8266 / ESP8285
 - [x] ESP32
 - [x] ESP32-S2
+- [x] ESP32-C3 / ESP8685
 - [x] ESP32-S3
 - [x] ESP32-C2 / ESP8684
-- [x] ESP32-C3 / ESP8685
 - [ ] ESP32-C6
 
 ## Links
