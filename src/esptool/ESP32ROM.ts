@@ -5,7 +5,6 @@ export default class ESP32ROM extends ESPLoader {
   static CHIP_DETECT_MAGIC_VALUE = [0x00f01d83];
 
   CHIP_NAME = 'ESP32';
-  IS_STUB = false;
 
   // ESP32 uses a 4 byte status reply
   STATUS_BYTES_LENGTH = 4;
