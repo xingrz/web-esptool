@@ -9,9 +9,11 @@ export default class ESP32ROM extends ESPLoader {
   // ESP32 uses a 4 byte status reply
   STATUS_BYTES_LENGTH = 4;
 
-  EFUSE_BLK0 = 0x3ff5a000;
+  EFUSE_BASE = 0x3FF5A000;
+  EFUSE_BLK0 = this.EFUSE_BASE;
 
-  DR_REG_SYSCON_BASE = 0x3ff66000;
+  SYSCON_BASE = 0x3FF66000;
+  SYSCON_DATE = this.SYSCON_BASE + 0x7C;
 
   FLASH_SIZES = {
     '1MB': 0x00,
@@ -49,11 +51,11 @@ export default class ESP32ROM extends ESPLoader {
     // EFUSE_BLK0, 180, 1, EFUSE_RD_CHIP_VER_REV2
     const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
     const word5 = await this.read_efuse(this.EFUSE_BLK0, 5);
-    const apb_ctl_date = await this.read_reg(this.DR_REG_SYSCON_BASE + 0x7C);
+    const syscon_date = await this.read_reg(this.SYSCON_DATE);
 
     const rev_bit0 = (word3 >> 15) & 0x1
     const rev_bit1 = (word5 >> 20) & 0x1
-    const rev_bit2 = (apb_ctl_date >> 31) & 0x1
+    const rev_bit2 = (syscon_date >> 31) & 0x1
 
     if (!rev_bit0) return 0;
     if (!rev_bit1) return 1;

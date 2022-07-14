@@ -7,7 +7,7 @@ export default class ESP32S2ROM extends ESP32ROM {
 
   CHIP_NAME = 'ESP32-S2';
 
-  EFUSE_BASE = 0x3f41A000;
+  EFUSE_BASE = 0x3F41A000;
   EFUSE_BLK1 = this.EFUSE_BASE + 0x044;
 
   STUB_CLASS = ESP32S2StubLoader;

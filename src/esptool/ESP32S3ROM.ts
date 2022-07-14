@@ -7,6 +7,8 @@ export default class ESP32S3ROM extends ESP32ROM {
 
   CHIP_NAME = 'ESP32-S3';
 
+  EFUSE_BASE = 0x60007000;
+
   STUB_CLASS = ESP32S3StubLoader;
 
   async load_stub(): Promise<IStub | null> {
