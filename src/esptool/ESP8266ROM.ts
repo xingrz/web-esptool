@@ -6,6 +6,12 @@ export default class ESP8266ROM extends ESPLoader {
 
   CHIP_NAME = 'ESP8266';
 
+  EFUSE_BASE = 0x3FF00050;
+  EFUSE_BLK0 = this.EFUSE_BASE + 0x000;
+  EFUSE_BLK1 = this.EFUSE_BASE + 0x004;
+  EFUSE_BLK2 = this.EFUSE_BASE + 0x008;
+  EFUSE_BLK3 = this.EFUSE_BASE + 0x00C;
+
   FLASH_SIZES = {
     '512KB': 0x00,
     '256KB': 0x10,
@@ -25,15 +31,6 @@ export default class ESP8266ROM extends ESPLoader {
   async load_stub(): Promise<IStub | null> {
     const { default: stub } = await import('./stubs/stub_flasher_8266.elf');
     return stub;
-  }
-
-  async get_efuses(): Promise<number[]> {
-    return [
-      await this.read_reg(0x3ff00050),
-      await this.read_reg(0x3ff00054),
-      await this.read_reg(0x3ff00058),
-      await this.read_reg(0x3ff0005c),
-    ];
   }
 
   private _get_flash_size(efuses: number[]): number {
@@ -60,7 +57,13 @@ export default class ESP8266ROM extends ESPLoader {
   }
 
   async get_chip_description(): Promise<string> {
-    const efuses = await this.get_efuses();
+    const efuses = [
+      await this.read_reg(this.EFUSE_BLK0),
+      await this.read_reg(this.EFUSE_BLK1),
+      await this.read_reg(this.EFUSE_BLK2),
+      await this.read_reg(this.EFUSE_BLK3),
+    ];
+
     if ((efuses[0] & (1 << 4)) || (efuses[2] & (1 << 16))) {
       const flash_size = this._get_flash_size(efuses);
       const max_temp = efuses[0] & (1 << 5);
