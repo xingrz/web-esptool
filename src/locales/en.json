@@ -1,0 +1,16 @@
+{
+  "upload": {
+    "hint": "Click to select a firmware, or drop it here",
+    "start": "Start"
+  },
+  "message": {
+    "connected": "Connected: {name}",
+    "oversize": "File too large: {size} MB",
+    "invalid-file": "Not a valid firmware",
+    "device-open-failed": "Failed opening device",
+    "flash-failed": "Flash failed"
+  },
+  "footer": {
+    "wiki": "Note about firmwares"
+  }
+}

@@ -10,7 +10,7 @@
           <inbox-outlined v-else />
         </p>
         <p class="ant-upload-text file" v-if="selected">{{ selected.name }}</p>
-        <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
+        <p class="ant-upload-text" v-else>{{ t('upload.hint') }}</p>
       </a-upload-dragger>
     </div>
     <div :class="[$style.main, $style.progress]" v-if="progress != null">{{ Math.floor(progress || 0) }}%</div>
@@ -18,7 +18,7 @@
       <a-button size="large" v-if="state != 'flashing'"
         :type="progress != null && Math.floor(progress) == 100 ? 'default' : 'primary'"
         :ghost="progress != null && Math.floor(progress) == 100" :disabled="!selected" :loading="state == 'connecting'"
-        @click="start">开始烧录</a-button>
+        @click="start">{{ t('upload.start').toUpperCase() }}</a-button>
     </div>
   </div>
   <div :class="{ [$style.footer]: true, [$style.inverted]: (progress || 0) > 10 }">
@@ -26,12 +26,13 @@
     <a-divider type="vertical" />
     <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
     <a-divider type="vertical" />
-    <a href="https://github.com/xingrz/web-esptool/wiki">固件格式说明</a>
+    <a href="https://github.com/xingrz/web-esptool/wiki">{{ t('footer.wiki') }}</a>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { message } from 'ant-design-vue';
 import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
 
@@ -40,6 +41,10 @@ import SonicView from './components/SonicView.vue';
 import readHex from './unpack/readHex';
 import readZip from './unpack/readZip';
 import ESPTool, { IConnectEvent, IFlashArgs } from './esptool';
+
+const { t } = useI18n({
+  inheritLocale: true,
+});
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
@@ -73,7 +78,7 @@ const esp = new ESPTool();
 
 esp.on('connect', ({ chip_description }: IConnectEvent) => {
   console.log(`Connected: ${chip_description}`);
-  message.success(`已连接：${chip_description}`);
+  message.success(t('message.connected', { name: chip_description }));
 });
 
 esp.on('progress', ({ index, blocks_written, blocks_total }) => {
@@ -87,7 +92,7 @@ esp.on('progress', ({ index, blocks_written, blocks_total }) => {
 
 async function handleFile({ file }: { file: File }): Promise<void> {
   if (file.size >= MAX_FILE_SIZE) {
-    message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
+    message.error(t('message.oversize', { size: Math.round(file.size / 1024 / 1024) }));
     return;
   }
 
@@ -99,7 +104,7 @@ async function handleFile({ file }: { file: File }): Promise<void> {
   }
 
   if (flashArgs == null) {
-    message.error('该文件不是一个合法的固件包');
+    message.error(t('message.invalid-file'));
     return;
   }
 
@@ -116,7 +121,7 @@ async function start(): Promise<void> {
     const serial = await navigator.serial.requestPort();
     await esp.open(serial);
   } catch (e) {
-    message.error('设备打开失败');
+    message.error(t('message.device-open-failed'));
     state.value = 'idle';
     return;
   }
@@ -125,7 +130,7 @@ async function start(): Promise<void> {
     await esp.flash(flashArgs!);
   } catch (e) {
     console.error(e);
-    message.error('烧录失败');
+    message.error(t('message.flash-failed'));
   }
   await esp.close();
   console.log('done');

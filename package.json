@@ -15,9 +15,11 @@
     "events": "^3.3.0",
     "fflate": "^0.7.3",
     "pify": "^6.0.0",
-    "vue": "^3.2.33"
+    "vue": "^3.2.33",
+    "vue-i18n": "^9.1.10"
   },
   "devDependencies": {
+    "@intlify/vite-plugin-vue-i18n": "^5.0.0",
     "@nabla/vite-plugin-eslint": "^1.4.0",
     "@types/jest": "^28.1.5",
     "@types/pify": "^5.0.1",
