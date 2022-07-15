@@ -2,31 +2,29 @@
   <div :class="[$style.main, $style.upload]" v-if="progress == null">
     <a-upload-dragger accept=".zip,.hex" :showUploadList="false" :customRequest="handleFile">
       <p class="ant-upload-drag-icon">
-        <file-zip-outlined v-if="props.selected" />
+        <file-zip-outlined v-if="firmware" />
         <inbox-outlined v-else />
       </p>
-      <p class="ant-upload-text" :class="$style.file" v-if="props.selected">{{ props.selected.name }}</p>
+      <p class="ant-upload-text" :class="$style.file" v-if="firmware">{{ firmware.name }}</p>
       <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
     </a-upload-dragger>
   </div>
   <div :class="[$style.main, $style.progress]" v-if="progress != null">{{ Math.floor(progress || 0) }}%</div>
   <div :class="$style.buttons">
-    <a-button size="large" v-if="state != 'flashing'"
-      :type="props.progress != null && Math.floor(props.progress) == 100 ? 'default' : 'primary'"
-      :ghost="props.progress != null && Math.floor(props.progress) == 100" :disabled="!props.selected"
-      :loading="state == 'connecting'" @click="() => emit('start')">开始烧录</a-button>
+    <a-button size="large" v-if="stage != 'flashing'" :type="completed ? 'default' : 'primary'" :ghost="completed"
+      :disabled="!firmware" :loading="stage == 'connecting'" @click="handleStart">
+      开始烧录</a-button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { defineEmits, defineProps } from 'vue';
+import { computed, defineEmits, defineProps, toRefs } from 'vue';
 import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
 
 import type { IState } from '@/types/state';
+import useTotalProgress from '@/composables/useTotalProgress';
 
 const props = defineProps<{
-  selected: File | null,
-  progress: number | null,
   state: IState,
 }>();
 
@@ -35,8 +33,16 @@ const emit = defineEmits<{
   (e: 'start'): void;
 }>();
 
-function handleFile({ file }: { file: File }) {
+const { stage, firmware } = toRefs(props.state);
+const progress = useTotalProgress(props.state);
+const completed = computed(() => progress.value == 100);
+
+function handleFile({ file }: { file: File }): void {
   emit('file', file);
+}
+
+function handleStart(): void {
+  emit('start');
 }
 </script>
 

@@ -13,7 +13,7 @@ import ESP32S3ROM from './ESP32S3ROM';
 import ESP32C2ROM from './ESP32C2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
 
-import { IFlashArgs, IConnectEvent } from './';
+import { IFlashArgs, IESPDevice, IFlashProgress } from './';
 import sleep from './utils/sleep';
 import hex from './utils/hex';
 import pad_image from './utils/pad_image';
@@ -66,7 +66,7 @@ export default class ESPTool extends EventEmitter {
 
       const chip_description = await this.loader.get_chip_description();
       console.log(`Detected ${chip_description}`);
-      this.emit('connect', { chip_description } as IConnectEvent);
+      this.emit('connect', <IESPDevice>{ chip_description });
 
       // 3. Load stub loader if present
       const stub = await this.run_stub(this.serial);
@@ -101,6 +101,7 @@ export default class ESPTool extends EventEmitter {
       await this.serial.close();
       this.serial = null;
     }
+    this.emit('disconnect');
   }
 
   async run_stub(serial: SerialPort): Promise<ESPLoader | null> {
@@ -216,10 +217,4 @@ export default class ESPTool extends EventEmitter {
     await this.loader.hard_reset();
   }
 
-}
-
-export interface IFlashProgress {
-  index: number;
-  blocks_written: number;
-  blocks_total: number;
 }
