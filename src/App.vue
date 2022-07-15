@@ -107,6 +107,7 @@ async function flash(): Promise<boolean> {
   } catch (e) {
     console.error(e);
     message.error('烧录失败');
+    state.progress = null;
     return false;
   } finally {
     state.stage = 'idle';
