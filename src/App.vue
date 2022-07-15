@@ -3,23 +3,7 @@
   <div :class="$style.content">
     <h1>Web ESPTool</h1>
     <div :class="$style.author">by XiNGRZ</div>
-    <div :class="[$style.main, $style.upload]" v-if="progress == null">
-      <a-upload-dragger accept=".zip,.hex" :showUploadList="false" :customRequest="handleFile" :class="$style.upload">
-        <p class="ant-upload-drag-icon">
-          <file-zip-outlined v-if="selected" />
-          <inbox-outlined v-else />
-        </p>
-        <p class="ant-upload-text file" v-if="selected">{{ selected.name }}</p>
-        <p class="ant-upload-text" v-else>点击选择或将固件包拖放到此处</p>
-      </a-upload-dragger>
-    </div>
-    <div :class="[$style.main, $style.progress]" v-if="progress != null">{{ Math.floor(progress || 0) }}%</div>
-    <div :class="$style.buttons">
-      <a-button size="large" v-if="state != 'flashing'"
-        :type="progress != null && Math.floor(progress) == 100 ? 'default' : 'primary'"
-        :ghost="progress != null && Math.floor(progress) == 100" :disabled="!selected" :loading="state == 'connecting'"
-        @click="start">开始烧录</a-button>
-    </div>
+    <simple :selected="selected" :progress="progress" :state="state" @file="handleFile" @start="start" />
   </div>
   <div :class="{ [$style.footer]: true, [$style.inverted]: (progress || 0) > 10 }">
     <span>© 2021-2022 XiNGRZ</span>
@@ -33,7 +17,8 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { message } from 'ant-design-vue';
-import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
+
+import Simple from './routes/Simple.vue';
 
 import SonicView from './components/SonicView.vue';
 
@@ -41,9 +26,9 @@ import readHex from './unpack/readHex';
 import readZip from './unpack/readZip';
 import ESPTool, { IConnectEvent, IFlashArgs } from './esptool';
 
-const MAX_FILE_SIZE = 16 * 1024 * 1024;
+import type { IState } from '@/types/state';
 
-type IState = 'idle' | 'connecting' | 'flashing';
+const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
 const selected = ref<File | null>(null);
 const progress = ref<number | null>(null);
@@ -85,7 +70,7 @@ esp.on('progress', ({ index, blocks_written, blocks_total }) => {
   progress.value = Math.min(100, (p / imageSizesTotal) * 100);
 });
 
-async function handleFile({ file }: { file: File }): Promise<void> {
+async function handleFile(file: File): Promise<void> {
   if (file.size >= MAX_FILE_SIZE) {
     message.error(`文件过大: ${Math.round(file.size / 1024 / 1024)} MB`);
     return;
@@ -160,40 +145,6 @@ async function start(): Promise<void> {
     font-size: 18px;
     font-weight: 300;
     margin-bottom: 50px;
-  }
-
-  .main {
-    width: 90%;
-    height: 200px;
-    max-width: 400px;
-  }
-
-  .upload {
-    :global(.ant-upload-btn) {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 24px 16px 16px;
-    }
-
-    :global(.ant-upload-text.file) {
-      font-family: monospace;
-    }
-  }
-
-  .progress {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    max-width: unset;
-    font-size: 100px;
-    font-weight: 100;
-  }
-
-  .buttons {
-    margin-top: 40px;
-    height: 50px;
   }
 }
 
