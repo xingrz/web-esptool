@@ -43,6 +43,9 @@ export default class ESPTool extends EventEmitter {
 
   async open(serial: SerialPort): Promise<void> {
     this.serial = serial;
+    this.serial.addEventListener('disconnect', () => {
+      this.close();
+    }, { once: true });
 
     try {
       // 1. Open serial port with default baud
