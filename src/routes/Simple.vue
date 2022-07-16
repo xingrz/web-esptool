@@ -1,4 +1,6 @@
 <template>
+  <h1 :class="$style.title">Web ESPTool</h1>
+  <div :class="$style.author">by XiNGRZ</div>
   <div :class="[$style.main, $style.upload]" v-if="progress == null">
     <a-upload-dragger accept=".zip,.hex" :showUploadList="false" :customRequest="handleFile">
       <p class="ant-upload-drag-icon">
@@ -30,6 +32,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'file', file: File): void;
+  (e: 'connect'): void;
+  (e: 'reset'): void;
+  (e: 'flash'): void;
   (e: 'start'): void;
 }>();
 
@@ -47,6 +52,19 @@ function handleStart(): void {
 </script>
 
 <style lang="scss" module>
+.title {
+  font-size: 50px;
+  font-weight: 100;
+  line-height: 1;
+  margin-bottom: 0;
+}
+
+.author {
+  font-size: 18px;
+  font-weight: 300;
+  margin-bottom: 50px;
+}
+
 .main {
   width: 90%;
   height: 200px;

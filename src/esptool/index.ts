@@ -14,6 +14,7 @@ export type IFlashSize = 'keep' | string;
 
 export interface IFlashPartition {
   address: number;
+  name: string;
   image: Buffer;
 }
 

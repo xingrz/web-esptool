@@ -34,13 +34,13 @@ export default async function readZip(file: File): Promise<IFlashArgs | null> {
       const address = parseInt(RegExp.$1, 16);
       const key = `${prefix}${args[i + 1]}`;
       if (entries[key]) {
-        flashArgs.partitions.push({ address, image: entries[key] });
+        flashArgs.partitions.push({ address, name: key, image: entries[key] });
       }
     } else if (args[i].match(/^([0-9]+)$/)) {
       const address = parseInt(RegExp.$1);
       const key = `${prefix}${args[i + 1]}`;
       if (entries[key]) {
-        flashArgs.partitions.push({ address, image: entries[key] });
+        flashArgs.partitions.push({ address, name: key, image: entries[key] });
       }
     }
   }

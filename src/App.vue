@@ -1,11 +1,18 @@
 <template>
   <sonic-view :peak="peak" :level="level" :period="500" />
-  <div :class="$style.content">
-    <h1>Web ESPTool</h1>
-    <div :class="$style.author">by XiNGRZ</div>
-    <simple :state="state" @file="handleFile" @start="oneClick" />
+  <div :class="{ [$style.header]: true, [$style.inverted]: (progress || 0) > 95 }">
+    <a-space align="center">
+      <span>高级模式</span>
+      <a-switch :checked="advanced" @update:checked="setAdvanced" />
+    </a-space>
   </div>
-  <div :class="{ [$style.footer]: true, [$style.inverted]: (progress || 0) > 10 }">
+  <div :class="$style.content">
+    <router-view v-slot="{ Component }">
+      <component :is="Component" :state="state" @file="handleFile" @connect="connect" @flash="flash" @reset="reset"
+        @start="oneClick" />
+    </router-view>
+  </div>
+  <div :class="{ [$style.footer]: true, [$style.inverted]: !advanced && (progress || 0) > 10 }">
     <span>© 2021-2022 XiNGRZ</span>
     <a-divider type="vertical" />
     <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
@@ -16,9 +23,8 @@
 
 <script lang="ts" setup>
 import { computed, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
-
-import Simple from './routes/Simple.vue';
 
 import SonicView from './components/SonicView.vue';
 
@@ -32,6 +38,16 @@ import type { IState } from '@/types/state';
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
+const router = useRouter();
+const advanced = computed(() => router.currentRoute.value.name == 'studio');
+function setAdvanced(value: boolean) {
+  if (value) {
+    router.replace({ name: 'studio' });
+  } else {
+    router.replace({ name: 'simple' });
+  }
+}
+
 const state = reactive<IState>({
   stage: 'idle',
   firmware: null,
@@ -44,8 +60,8 @@ const esp = new ESPTool();
 
 esp.on('connect', (device: IESPDevice) => {
   state.device = device;
-  console.log(`Connected: ${device.chip_description}`);
-  message.success(`已连接：${device.chip_description}`);
+  console.log(`Connected: ${device.description}`);
+  message.success(`已连接：${device.description}`);
 });
 
 esp.on('disconnect', () => {
@@ -96,13 +112,13 @@ async function connect(): Promise<boolean> {
   }
 }
 
-async function flash(): Promise<boolean> {
+async function flash(reset = false): Promise<boolean> {
   if (state.flashArgs == null) {
     return false;
   }
   try {
     state.stage = 'flashing';
-    await esp.flash(state.flashArgs);
+    await esp.flash(state.flashArgs, reset);
     return true;
   } catch (e) {
     console.error(e);
@@ -114,12 +130,16 @@ async function flash(): Promise<boolean> {
   }
 }
 
+async function reset(): Promise<void> {
+  await esp.reset();
+}
+
 async function oneClick(): Promise<void> {
   state.progress = null;
   if (!await connect()) {
     return;
   }
-  await flash();
+  await flash(true);
   await esp.close();
   console.log('done');
 }
@@ -129,12 +149,12 @@ const progress = useTotalProgress(state);
 const peak = computed(() => {
   if (state.stage == 'flashing') return 0.7;
   else if (state.stage == 'connecting') return 0.4;
-  else if (progress.value != null && progress.value >= 100) return 0;
+  else if (progress.value != null && progress.value >= 100 && !advanced.value) return 0;
   else return 0.2;
 });
 
 const level = computed(() => {
-  if (progress.value == null) {
+  if (progress.value == null || advanced.value) {
     return 0.02;
   } else {
     return 0.02 + (progress.value / 100) * 1.1;
@@ -149,27 +169,19 @@ const level = computed(() => {
   padding: 0;
 }
 
+.header {
+  padding: 16px 32px;
+  text-align: right;
+}
+
 .content {
   width: 100vw;
-  height: 90vh;
+  height: 80vh;
   min-height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
-  >h1 {
-    font-size: 50px;
-    font-weight: 100;
-    line-height: 1;
-    margin-bottom: 0;
-  }
-
-  .author {
-    font-size: 18px;
-    font-weight: 300;
-    margin-bottom: 50px;
-  }
 }
 
 .footer {

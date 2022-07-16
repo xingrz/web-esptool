@@ -15,7 +15,8 @@
     "events": "^3.3.0",
     "fflate": "^0.7.3",
     "pify": "^6.0.0",
-    "vue": "^3.2.33"
+    "vue": "^3.2.33",
+    "vue-router": "^4.1.2"
   },
   "devDependencies": {
     "@nabla/vite-plugin-eslint": "^1.4.0",

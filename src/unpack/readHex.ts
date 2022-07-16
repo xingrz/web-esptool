@@ -1,4 +1,5 @@
 import { IFlashArgs } from '@/esptool';
+import hex from '@/esptool/utils/hex';
 
 export default async function readHex(file: File): Promise<IFlashArgs | null> {
   const flashArgs: IFlashArgs = {
@@ -38,6 +39,7 @@ export default async function readHex(file: File): Promise<IFlashArgs | null> {
     if (recordType == 0x01) {
       flashArgs.partitions.push({
         address: partAddr,
+        name: `part_${hex(partAddr, 4)}.bin`,
         image: partData,
       });
       partAddr = 0;
@@ -53,6 +55,7 @@ export default async function readHex(file: File): Promise<IFlashArgs | null> {
         } else {
           flashArgs.partitions.push({
             address: partAddr,
+            name: `part_${hex(partAddr, 4)}.bin`,
             image: partData,
           });
           partAddr = extended + address;
@@ -71,6 +74,7 @@ export default async function readHex(file: File): Promise<IFlashArgs | null> {
         } else {
           flashArgs.partitions.push({
             address: partAddr,
+            name: `part_${hex(partAddr, 4)}.bin`,
             image: partData,
           });
           partAddr = nextExtend;

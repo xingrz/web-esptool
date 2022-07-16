@@ -141,7 +141,7 @@ export default class ESPTool extends EventEmitter {
     return new this.loader.STUB_CLASS!(serial);
   }
 
-  async flash(args: IFlashArgs): Promise<void> {
+  async flash(args: IFlashArgs, reset = true): Promise<void> {
     if (!this.loader) return;
 
     const {
@@ -217,7 +217,14 @@ export default class ESPTool extends EventEmitter {
       }
     }
 
-    await this.loader.hard_reset();
+    if (reset) {
+      await this.reset();
+    }
+  }
+
+  async reset(): Promise<void> {
+    await this.loader?.hard_reset();
+    await this.close();
   }
 
 }
