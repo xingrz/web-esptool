@@ -1,6 +1,8 @@
 import { IESPDevice } from '.';
 import ESPLoader, { IStub } from './ESPLoader';
 
+import formatMAC from './utils/formatMAC';
+
 export default class ESP32ROM extends ESPLoader {
 
   static CHIP_DETECT_MAGIC_VALUE = [0x00f01d83];
@@ -38,6 +40,26 @@ export default class ESP32ROM extends ESPLoader {
 
   async read_efuse(block: number, n: number): Promise<number> {
     return await this.read_reg(block + (4 * n));
+  }
+
+  async read_mac(): Promise<string | undefined> {
+    const word1 = await this.read_efuse(this.EFUSE_BLK0, 1);
+    const word2 = await this.read_efuse(this.EFUSE_BLK0, 2);
+
+    // EFUSE_BLK0, 72, 8, Factory MAC addr [0]
+    // EFUSE_BLK0, 64, 8, Factory MAC addr [1]
+    // EFUSE_BLK0, 56, 8, Factory MAC addr [2]
+    // EFUSE_BLK0, 48, 8, Factory MAC addr [3]
+    // EFUSE_BLK0, 40, 8, Factory MAC addr [4]
+    // EFUSE_BLK0, 32, 8, Factory MAC addr [5]
+    return formatMAC([
+      (word2 >> 8) & 0xff,
+      (word2 >> 0) & 0xff,
+      (word1 >> 24) & 0xff,
+      (word1 >> 16) & 0xff,
+      (word1 >> 8) & 0xff,
+      (word1 >> 0) & 0xff,
+    ]);
   }
 
   async get_chip_info(): Promise<IESPDevice> {
@@ -84,6 +106,7 @@ export default class ESP32ROM extends ESPLoader {
       model: chip_name,
       revision: chip_revision,
       description: `${chip_name} (revision ${chip_revision})`,
+      mac: await this.read_mac(),
       psram_size: psram_size,
     };
   }

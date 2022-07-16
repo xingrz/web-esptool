@@ -198,6 +198,10 @@ export default class ESPLoader {
     return val;
   }
 
+  async read_mac(): Promise<string | undefined> {
+    throw new Error('Not supported');
+  }
+
   async get_chip_info(): Promise<IESPDevice> {
     throw new Error('Not supported');
   }

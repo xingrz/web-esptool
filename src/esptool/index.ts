@@ -27,5 +27,6 @@ export interface IESPDevice {
   model: string;
   revision: number;
   description: string;
+  mac: string | undefined;
   psram_size: number | undefined;
 }

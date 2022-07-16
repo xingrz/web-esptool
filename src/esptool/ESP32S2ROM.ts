@@ -2,6 +2,8 @@ import { IESPDevice } from '.';
 import { IStub } from './ESPLoader';
 import ESP32ROM from './ESP32ROM';
 
+import formatMAC from './utils/formatMAC';
+
 export default class ESP32S2ROM extends ESP32ROM {
 
   static CHIP_DETECT_MAGIC_VALUE = [0x000007c6];
@@ -16,6 +18,26 @@ export default class ESP32S2ROM extends ESP32ROM {
   async load_stub(): Promise<IStub | null> {
     const { default: stub } = await import('./stubs/stub_flasher_32s2.elf');
     return stub;
+  }
+
+  async read_mac(): Promise<string | undefined> {
+    const word0 = await this.read_efuse(this.EFUSE_BLK1, 0);
+    const word1 = await this.read_efuse(this.EFUSE_BLK1, 1);
+
+    // EFUSE_BLK1, 40, 8, Factory MAC addr [0]
+    // EFUSE_BLK1, 32, 8, Factory MAC addr [1]
+    // EFUSE_BLK1, 24, 8, Factory MAC addr [2]
+    // EFUSE_BLK1, 16, 8, Factory MAC addr [3]
+    // EFUSE_BLK1, 8, 8, Factory MAC addr [4]
+    // EFUSE_BLK1, 0, 8, Factory MAC addr [5]
+    return formatMAC([
+      (word1 >> 8) & 0xff,
+      (word1 >> 0) & 0xff,
+      (word0 >> 24) & 0xff,
+      (word0 >> 16) & 0xff,
+      (word0 >> 8) & 0xff,
+      (word0 >> 0) & 0xff,
+    ]);
   }
 
   async get_chip_info(): Promise<IESPDevice> {
@@ -39,6 +61,7 @@ export default class ESP32S2ROM extends ESP32ROM {
       model: chip_name,
       revision: 0,
       description: chip_name,
+      mac: await this.read_mac(),
       psram_size: psram_size,
     };
   }

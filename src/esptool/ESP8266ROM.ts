@@ -1,6 +1,8 @@
 import { IESPDevice } from '.';
 import ESPLoader, { IStub } from './ESPLoader';
 
+import formatMAC from './utils/formatMAC';
+
 export default class ESP8266ROM extends ESPLoader {
 
   static CHIP_DETECT_MAGIC_VALUE = [0xfff0c101];
@@ -32,6 +34,34 @@ export default class ESP8266ROM extends ESPLoader {
   async load_stub(): Promise<IStub | null> {
     const { default: stub } = await import('./stubs/stub_flasher_8266.elf');
     return stub;
+  }
+
+  async read_mac(): Promise<string | undefined> {
+    const efuses = [
+      await this.read_reg(this.EFUSE_BLK0),
+      await this.read_reg(this.EFUSE_BLK1),
+      await this.read_reg(this.EFUSE_BLK2),
+      await this.read_reg(this.EFUSE_BLK3),
+    ];
+
+    const oui = (() => {
+      if (efuses[3] != 0) {
+        return [(efuses[3] >> 16) & 0xff, (efuses[3] >> 8) & 0xff, efuses[3] & 0xff];
+      } else if (((efuses[1] >> 16) & 0xff) == 0) {
+        return [0x18, 0xfe, 0x34];
+      } else if (((efuses[1] >> 16) & 0xff) == 1) {
+        return [0xac, 0xd0, 0x74];
+      }
+    })();
+
+    if (!oui) return undefined;
+
+    return formatMAC([
+      ...oui,
+      (efuses[1] >> 8) & 0xff,
+      (efuses[1] >> 0) & 0xff,
+      (efuses[0] >> 24) & 0xff,
+    ]);
   }
 
   private _get_flash_size(efuses: number[]): number {
@@ -76,6 +106,7 @@ export default class ESP8266ROM extends ESPLoader {
         model: chip_name,
         revision: 0,
         description: chip_name,
+        mac: await this.read_mac(),
         psram_size: undefined,
       };
     } else {
@@ -83,6 +114,7 @@ export default class ESP8266ROM extends ESPLoader {
         model: 'ESP8266EX',
         revision: 0,
         description: 'ESP8266EX',
+        mac: await this.read_mac(),
         psram_size: undefined,
       };
     }

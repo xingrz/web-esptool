@@ -1,8 +1,8 @@
 import { IESPDevice } from '.';
 import { IStub } from './ESPLoader';
-import ESP32ROM from './ESP32ROM';
+import ESP32S2ROM from './ESP32S2ROM';
 
-export default class ESP32C3ROM extends ESP32ROM {
+export default class ESP32C3ROM extends ESP32S2ROM {
 
   // Magic value for ESP32C3 eco 1+2 and ESP32C3 eco3 respectivly
   static CHIP_DETECT_MAGIC_VALUE = [0x6921506f, 0x1b31506f];
@@ -36,6 +36,7 @@ export default class ESP32C3ROM extends ESP32ROM {
       model: chip_name,
       revision: chip_revision,
       description: `${chip_name} (revision ${chip_revision})`,
+      mac: await this.read_mac(),
       psram_size: undefined,
     };
   }
