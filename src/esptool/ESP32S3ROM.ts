@@ -24,6 +24,7 @@ export default class ESP32S3ROM extends ESP32S2ROM {
       revision: 0,
       description: 'ESP32-S3',
       mac: await this.read_mac(),
+      flash_size: undefined,
       psram_size: undefined,
     };
   }

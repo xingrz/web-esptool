@@ -28,5 +28,6 @@ export interface IESPDevice {
   revision: number;
   description: string;
   mac: string | undefined;
+  flash_size: number | undefined;
   psram_size: number | undefined;
 }

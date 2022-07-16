@@ -107,6 +107,7 @@ export default class ESP8266ROM extends ESPLoader {
         revision: 0,
         description: chip_name,
         mac: await this.read_mac(),
+        flash_size: flash_size > 0 ? flash_size : undefined,
         psram_size: undefined,
       };
     } else {
@@ -115,6 +116,7 @@ export default class ESP8266ROM extends ESPLoader {
         revision: 0,
         description: 'ESP8266EX',
         mac: await this.read_mac(),
+        flash_size: undefined,
         psram_size: undefined,
       };
     }

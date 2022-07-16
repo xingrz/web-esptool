@@ -37,6 +37,7 @@ export default class ESP32C3ROM extends ESP32S2ROM {
       revision: chip_revision,
       description: `${chip_name} (revision ${chip_revision})`,
       mac: await this.read_mac(),
+      flash_size: undefined,
       psram_size: undefined,
     };
   }

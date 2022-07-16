@@ -55,6 +55,7 @@ export default class ESP32S2ROM extends ESP32ROM {
       ['ESP32-S2FH4', 'ESP32-S2FN4R2'],
     ][flash_version]?.[psram_version] || 'unknown ESP32-S2';
 
+    const flash_size = [undefined, 2, 4][flash_version];
     const psram_size = [undefined, 2][psram_version];
 
     return {
@@ -62,6 +63,7 @@ export default class ESP32S2ROM extends ESP32ROM {
       revision: 0,
       description: chip_name,
       mac: await this.read_mac(),
+      flash_size: flash_size,
       psram_size: psram_size,
     };
   }

@@ -98,6 +98,13 @@ export default class ESP32ROM extends ESPLoader {
       'ESP32-D0WDR2-V3',
     ][pkg_version] || 'unknown ESP32';
 
+    const flash_size = {
+      'ESP32-U4WDH': 4,
+      'ESP32-PICO-V3': 4,
+      'ESP32-PICO-V3-02': 8,
+      'ESP32-PICO-D4': 4,
+    }[chip_name];
+
     const psram_size = {
       'ESP32-PICO-V3-02': 2,
     }[chip_name];
@@ -107,6 +114,7 @@ export default class ESP32ROM extends ESPLoader {
       revision: chip_revision,
       description: `${chip_name} (revision ${chip_revision})`,
       mac: await this.read_mac(),
+      flash_size: flash_size,
       psram_size: psram_size,
     };
   }
