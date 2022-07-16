@@ -1,3 +1,4 @@
+import { IESPDevice } from '.';
 import ESPLoader, { IStub } from './ESPLoader';
 
 export default class ESP32ROM extends ESPLoader {
@@ -39,51 +40,52 @@ export default class ESP32ROM extends ESPLoader {
     return await this.read_reg(block + (4 * n));
   }
 
-  async get_pkg_version(): Promise<number> {
-    // EFUSE_BLK0, 105, 3, EFUSE_RD_CHIP_VER_PKG
-    // EFUSE_BLK0, 98, 1, EFUSE_RD_CHIP_VER_PKG_4BIT
-    const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
-    return ((word3 >> 9) & 0x07) + (((word3 >> 2) & 0x1) << 3);
-  }
-
-  async get_chip_revision(): Promise<number> {
-    // EFUSE_BLK0, 111, 1, EFUSE_RD_CHIP_VER_REV1
-    // EFUSE_BLK0, 180, 1, EFUSE_RD_CHIP_VER_REV2
+  async get_chip_info(): Promise<IESPDevice> {
     const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
     const word5 = await this.read_efuse(this.EFUSE_BLK0, 5);
+
+    // EFUSE_BLK0, 98, 1, EFUSE_RD_CHIP_VER_PKG_4BIT
+    // EFUSE_BLK0, 105, 3, EFUSE_RD_CHIP_VER_PKG
+    const pkg_version = (((word3 >> 2) & 0x1) << 3) | ((word3 >> 9) & 0x7);
+
     const syscon_date = await this.read_reg(this.SYSCON_DATE);
-
-    const rev_bit0 = (word3 >> 15) & 0x1
-    const rev_bit1 = (word5 >> 20) & 0x1
-    const rev_bit2 = (syscon_date >> 31) & 0x1
-
-    if (!rev_bit0) return 0;
-    if (!rev_bit1) return 1;
-    if (!rev_bit2) return 2;
-    return 3;
-  }
-
-  async get_chip_description(): Promise<string> {
-    const pkg_version = await this.get_pkg_version();
-    const chip_revision = await this.get_chip_revision();
+    const chip_revision = (() => {
+      // EFUSE_BLK0, 111, 1, EFUSE_RD_CHIP_VER_REV1
+      // EFUSE_BLK0, 180, 1, EFUSE_RD_CHIP_VER_REV2
+      const rev_bit0 = (word3 >> 15) & 0x1
+      const rev_bit1 = (word5 >> 20) & 0x1
+      const rev_bit2 = (syscon_date >> 31) & 0x1
+      if (rev_bit2) return 3;
+      if (rev_bit1) return 2;
+      if (rev_bit0) return 1;
+      return 0;
+    })();
     const rev3 = (chip_revision == 3);
-    const single_core = (await this.read_efuse(this.EFUSE_BLK0, 3)) & (1 << 0); // CHIP_VER DIS_APP_CPU
 
-    let chip_name = {
-      0: single_core ? 'ESP32-S0WDQ6' : 'ESP32-D0WDQ6',
-      1: single_core ? 'ESP32-S0WD' : 'ESP32-D0WD',
-      2: 'ESP32-D2WD',
-      4: 'ESP32-U4WDH',
-      5: rev3 ? 'ESP32-PICO-V3' : 'ESP32-PICO-D4',
-      6: 'ESP32-PICO-V3-02',
-      7: "ESP32-D0WDR2-V3",
-    }[pkg_version] || 'unknown ESP32';
+    // EFUSE_BLK0, 96, 1, FUSE_RD_CHIP_VER_DIS_APP_CPU
+    const single_core = (word3 >> 0) & 0x1;
 
-    if (chip_name.startsWith('ESP32-D0WD') && rev3) {
-      chip_name += '-V3';
-    }
+    const chip_name = [
+      single_core ? 'ESP32-S0WDQ6' : (rev3 ? 'ESP32-D0WDQ6-V3' : 'ESP32-D0WDQ6'),
+      single_core ? 'ESP32-S0WD' : (rev3 ? 'ESP32-D0WD-V3' : 'ESP32-D0WD'),
+      'ESP32-D2WD',
+      undefined,
+      'ESP32-U4WDH',
+      rev3 ? 'ESP32-PICO-V3' : 'ESP32-PICO-D4',
+      'ESP32-PICO-V3-02',
+      'ESP32-D0WDR2-V3',
+    ][pkg_version] || 'unknown ESP32';
 
-    return `${chip_name} (revision ${chip_revision})`;
+    const psram_size = {
+      'ESP32-PICO-V3-02': 2,
+    }[chip_name];
+
+    return {
+      model: chip_name,
+      revision: chip_revision,
+      description: `${chip_name} (revision ${chip_revision})`,
+      psram_size: psram_size,
+    };
   }
 
 }

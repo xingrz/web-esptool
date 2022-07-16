@@ -1,3 +1,4 @@
+import { IESPDevice } from '.';
 import { IStub } from './ESPLoader';
 import ESP32ROM from './ESP32ROM';
 
@@ -16,8 +17,13 @@ export default class ESP32S3ROM extends ESP32ROM {
     return stub;
   }
 
-  async get_chip_description(): Promise<string> {
-    return 'ESP32-S3';
+  async get_chip_info(): Promise<IESPDevice> {
+    return {
+      model: 'ESP32-S3',
+      revision: 0,
+      description: 'ESP32-S3',
+      psram_size: undefined,
+    };
   }
 
 }

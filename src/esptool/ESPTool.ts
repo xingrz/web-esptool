@@ -67,9 +67,9 @@ export default class ESPTool extends EventEmitter {
       }
       this.loader.start();
 
-      const chip_description = await this.loader.get_chip_description();
-      console.log(`Detected ${chip_description}`);
-      this.emit('connect', <IESPDevice>{ chip_description });
+      const info = await this.loader.get_chip_info();
+      console.log(`Detected ${info.description}`);
+      this.emit('connect', info);
 
       // 3. Load stub loader if present
       const stub = await this.run_stub(this.serial);

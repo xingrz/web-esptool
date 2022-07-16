@@ -1,3 +1,4 @@
+import { IESPDevice } from '.';
 import { Command } from './cmds';
 import SlipReader from './slip';
 
@@ -197,7 +198,7 @@ export default class ESPLoader {
     return val;
   }
 
-  async get_chip_description(): Promise<string> {
+  async get_chip_info(): Promise<IESPDevice> {
     throw new Error('Not supported');
   }
 

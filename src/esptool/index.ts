@@ -24,5 +24,8 @@ export interface IFlashProgress {
 }
 
 export interface IESPDevice {
-  chip_description: string;
+  model: string;
+  revision: number;
+  description: string;
+  psram_size: number | undefined;
 }

@@ -1,3 +1,4 @@
+import { IESPDevice } from '.';
 import { IStub } from './ESPLoader';
 import ESP32ROM from './ESP32ROM';
 
@@ -9,7 +10,6 @@ export default class ESP32C3ROM extends ESP32ROM {
   CHIP_NAME = 'ESP32-C3';
 
   EFUSE_BASE = 0x60008800;
-  EFUSE_BLK0 = this.EFUSE_BASE + 0x030;
   EFUSE_BLK1 = this.EFUSE_BASE + 0x044;
 
   STUB_CLASS = ESP32C3StubLoader;
@@ -19,26 +19,25 @@ export default class ESP32C3ROM extends ESP32ROM {
     return stub;
   }
 
-  async get_pkg_version(): Promise<number> {
+  async get_chip_info(): Promise<IESPDevice> {
+    const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
+
     // EFUSE_BLK1, 117, 3, PKG_VERSION
-    const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
-    return (word3 >> 21) & 0x07;
-  }
+    const pkg_version = (word3 >> 21) & 0x07;
 
-  async get_chip_revision(): Promise<number> {
     // EFUSE_BLK1, 114, 3, WAFER_VERSION
-    const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
-    return (word3 >> 18) & 0x07;
-  }
+    const chip_revision = (word3 >> 18) & 0x07;
 
-  async get_chip_description(): Promise<string> {
     const chip_name = {
       0: 'ESP32-C3',
-    }[await this.get_pkg_version()] || 'unknown ESP32-C3';
+    }[pkg_version] || 'unknown ESP32-C3';
 
-    const chip_revision = await this.get_chip_revision();
-
-    return `${chip_name} (revision ${chip_revision})`;
+    return {
+      model: chip_name,
+      revision: chip_revision,
+      description: `${chip_name} (revision ${chip_revision})`,
+      psram_size: undefined,
+    };
   }
 
 }

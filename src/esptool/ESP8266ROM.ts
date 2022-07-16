@@ -1,3 +1,4 @@
+import { IESPDevice } from '.';
 import ESPLoader, { IStub } from './ESPLoader';
 
 export default class ESP8266ROM extends ESPLoader {
@@ -56,7 +57,7 @@ export default class ESP8266ROM extends ESPLoader {
     return -1;
   }
 
-  async get_chip_description(): Promise<string> {
+  async get_chip_info(): Promise<IESPDevice> {
     const efuses = [
       await this.read_reg(this.EFUSE_BLK0),
       await this.read_reg(this.EFUSE_BLK1),
@@ -67,13 +68,23 @@ export default class ESP8266ROM extends ESPLoader {
     if ((efuses[0] & (1 << 4)) || (efuses[2] & (1 << 16))) {
       const flash_size = this._get_flash_size(efuses);
       const max_temp = efuses[0] & (1 << 5);
-      const chip_name = {
-        1: max_temp ? 'ESP8285H08' : 'ESP8285N08',
-        2: max_temp ? 'ESP8285H16' : 'ESP8285N16',
-      }[flash_size] || 'ESP8285';
-      return chip_name;
+      const chip_name = [
+        max_temp ? 'ESP8285H08' : 'ESP8285N08',
+        max_temp ? 'ESP8285H16' : 'ESP8285N16',
+      ][flash_size] || 'ESP8285';
+      return {
+        model: chip_name,
+        revision: 0,
+        description: chip_name,
+        psram_size: undefined,
+      };
     } else {
-      return 'ESP8266EX';
+      return {
+        model: 'ESP8266EX',
+        revision: 0,
+        description: 'ESP8266EX',
+        psram_size: undefined,
+      };
     }
   }
 
