@@ -13,7 +13,7 @@ import ESP32S3ROM from './ESP32S3ROM';
 import ESP32C2ROM from './ESP32C2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
 
-import { IFlashArgs, IESPDevice, IFlashProgress } from './';
+import { IFlashArgs, IFlashProgress } from './';
 import sleep from './utils/sleep';
 import hex from './utils/hex';
 import pad_image from './utils/pad_image';
