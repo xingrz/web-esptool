@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineEmits, defineProps, ref } from 'vue';
+import { computed, defineEmits, defineProps } from 'vue';
 import { FolderOpenOutlined, DownloadOutlined } from '@ant-design/icons-vue';
 
 import hex from '@/esptool/utils/hex';

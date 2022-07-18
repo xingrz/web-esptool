@@ -1,7 +1,8 @@
-import { computed, ComputedRef } from 'vue';
+import { computed } from 'vue';
 
-import { IState } from '@/types/state';
-import { IFlashPartition } from '@/esptool';
+import type { ComputedRef } from 'vue';
+import type { IState } from '@/types/state';
+import type { IFlashPartition } from '@/esptool';
 
 export default function useTotalProgress(state: IState): ComputedRef<number | null> {
   return computed(() => {

@@ -1,9 +1,10 @@
-import { IESPDevice } from '.';
 import { Command } from './cmds';
 import SlipReader from './slip';
 
 import sleep from './utils/sleep';
 import checksum from './utils/checksum';
+
+import type { IESPDevice } from '.';
 
 const DTR = 'dataTerminalReady';
 const RTS = 'requestToSend';

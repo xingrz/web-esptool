@@ -1,4 +1,4 @@
-import { IFlashArgs } from '../';
+import type { IFlashArgs } from '..';
 
 //First byte of the application image
 const ESP_IMAGE_MAGIC = 0xe9;

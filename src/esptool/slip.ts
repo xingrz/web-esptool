@@ -1,12 +1,13 @@
 import EventEmitter from 'events';
 
 import ESPLoader from './ESPLoader';
-import { Command } from './cmds';
 
 import pack from './utils/pack';
 import unpack from './utils/unpack';
 import hex from './utils/hex';
 import once from './utils/once';
+
+import type { Command } from './cmds';
 
 interface IResponse {
   val: number;

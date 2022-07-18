@@ -1,7 +1,9 @@
-import { IESPDevice } from '.';
-import ESPLoader, { IStub } from './ESPLoader';
+import ESPLoader from './ESPLoader';
 
 import formatMAC from './utils/formatMAC';
+
+import type { IESPDevice } from '.';
+import type { IStub } from './ESPLoader';
 
 export default class ESP8266ROM extends ESPLoader {
 

@@ -26,15 +26,16 @@ import { computed, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 
-import SonicView from './components/SonicView.vue';
+import SonicView from '@/components/SonicView.vue';
 
-import useTotalProgress from './composables/useTotalProgress';
+import useTotalProgress from '@/composables/useTotalProgress';
 
-import readHex from './unpack/readHex';
-import readZip from './unpack/readZip';
-import ESPTool, { IESPDevice, IFlashProgress } from './esptool';
+import readHex from '@/unpack/readHex';
+import readZip from '@/unpack/readZip';
+import ESPTool from '@/esptool';
 
 import type { IState } from '@/types/state';
+import type { IESPDevice, IFlashProgress } from '@/esptool';
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 

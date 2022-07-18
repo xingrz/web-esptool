@@ -1,7 +1,7 @@
 import promisify from 'pify';
 import { unzip as _unzip } from 'fflate';
 
-import { IFlashArgs, IFlashMode } from '@/esptool';
+import type { IFlashArgs, IFlashMode } from '@/esptool';
 
 const unzip = promisify(_unzip);
 

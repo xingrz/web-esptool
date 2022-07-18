@@ -1,4 +1,4 @@
-import { IESPDevice, IFlashArgs, IFlashProgress } from '@/esptool';
+import type { IESPDevice, IFlashArgs, IFlashProgress } from '@/esptool';
 
 export interface IState {
   stage: 'idle' | 'connecting' | 'flashing';

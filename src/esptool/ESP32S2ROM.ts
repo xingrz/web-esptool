@@ -1,8 +1,9 @@
-import { IESPDevice } from '.';
-import { IStub } from './ESPLoader';
 import ESP32ROM from './ESP32ROM';
 
 import formatMAC from './utils/formatMAC';
+
+import type { IESPDevice } from '.';
+import type { IStub } from './ESPLoader';
 
 export default class ESP32S2ROM extends ESP32ROM {
 

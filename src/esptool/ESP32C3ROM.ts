@@ -1,6 +1,7 @@
-import { IESPDevice } from '.';
-import { IStub } from './ESPLoader';
 import ESP32S2ROM from './ESP32S2ROM';
+
+import type { IESPDevice } from '.';
+import type { IStub } from './ESPLoader';
 
 export default class ESP32C3ROM extends ESP32S2ROM {
 

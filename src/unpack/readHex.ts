@@ -1,5 +1,6 @@
-import { IFlashArgs } from '@/esptool';
 import hex from '@/esptool/utils/hex';
+
+import type { IFlashArgs } from '@/esptool';
 
 export default async function readHex(file: File): Promise<IFlashArgs | null> {
   const flashArgs: IFlashArgs = {

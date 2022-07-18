@@ -23,8 +23,9 @@
 import { computed, defineEmits, defineProps, toRefs } from 'vue';
 import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
 
-import type { IState } from '@/types/state';
 import useTotalProgress from '@/composables/useTotalProgress';
+
+import type { IState } from '@/types/state';
 
 const props = defineProps<{
   state: IState,

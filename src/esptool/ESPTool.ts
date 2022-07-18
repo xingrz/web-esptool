@@ -13,11 +13,12 @@ import ESP32S3ROM from './ESP32S3ROM';
 import ESP32C2ROM from './ESP32C2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
 
-import { IFlashArgs, IFlashProgress } from './';
 import sleep from './utils/sleep';
 import hex from './utils/hex';
 import pad_image from './utils/pad_image';
 import update_image_flash_params from './utils/update_image_flash_params';
+
+import type { IFlashArgs, IFlashProgress } from '.';
 
 const BAUD_RATE_DEFAULT = 115200;
 const BAUD_RATE_BOOST = 960000;
