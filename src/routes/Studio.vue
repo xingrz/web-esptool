@@ -41,7 +41,7 @@
   </a-table>
   <div :class="$style.main" :style="{ marginTop: '16px', textAlign: 'right' }">
     <a-space>
-      <a-upload accept=".zip,.hex" :showUploadList="false" :customRequest="handleFile">
+      <a-upload accept=".zip" :showUploadList="false" :customRequest="handleFile">
         <a-button>
           <template #icon>
             <folder-open-outlined />

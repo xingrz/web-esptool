@@ -30,7 +30,6 @@ import SonicView from '@/components/SonicView.vue';
 
 import useTotalProgress from '@/composables/useTotalProgress';
 
-import readHex from '@/unpack/readHex';
 import readZip from '@/unpack/readZip';
 import ESPTool from '@/esptool';
 
@@ -82,9 +81,7 @@ async function handleFile(file: File): Promise<void> {
   state.progress = null;
 
   const name = file.name.toLocaleLowerCase();
-  if (name.endsWith('.hex')) {
-    state.flashArgs = await readHex(file);
-  } else if (name.endsWith('.zip')) {
+  if (name.endsWith('.zip')) {
     state.flashArgs = await readZip(file);
   }
 
