@@ -14,9 +14,10 @@ npm run serve
 
 ## Features / TODOs
 
-- [x] Auto program
+- [x] Auto reset
 - [x] Stub loader
 - [x] Compression
+- [x] [UF2](https://github.com/microsoft/uf2) image format
 - [ ] Encryption
 - [x] ESP8266 / ESP8285
 - [x] ESP32
