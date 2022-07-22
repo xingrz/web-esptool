@@ -2,7 +2,7 @@
   <h1 :class="$style.title">Web ESPTool</h1>
   <div :class="$style.author">by XiNGRZ</div>
   <div :class="[$style.main, $style.upload]" v-if="progress == null">
-    <a-upload-dragger accept=".zip" :showUploadList="false" :customRequest="handleFile">
+    <a-upload-dragger :accept="acceptExts.join(',')" :showUploadList="false" :customRequest="handleFile">
       <p class="ant-upload-drag-icon">
         <file-zip-outlined v-if="firmware" />
         <inbox-outlined v-else />
@@ -28,7 +28,8 @@ import useTotalProgress from '@/composables/useTotalProgress';
 import type { IState } from '@/types/state';
 
 const props = defineProps<{
-  state: IState,
+  state: IState;
+  acceptExts: string[];
 }>();
 
 const emit = defineEmits<{

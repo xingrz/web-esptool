@@ -23,7 +23,7 @@
   </div>
 
   <a-table :columns="columns" :data-source="props.state.flashArgs?.partitions || []" :pagination="false" bordered
-    size="small" :class="$style.main">
+    size="small" :scroll="{ y: 300 }" :class="$style.main">
     <template #bodyCell="{ column, record, index }">
       <template v-if="column.key == 'address'">
         <code>{{ hex(record.address, 4) }}</code>
@@ -41,7 +41,7 @@
   </a-table>
   <div :class="$style.main" :style="{ marginTop: '16px', textAlign: 'right' }">
     <a-space>
-      <a-upload accept=".zip" :showUploadList="false" :customRequest="handleFile">
+      <a-upload :accept="acceptExts.join(',')" :showUploadList="false" :customRequest="handleFile">
         <a-button>
           <template #icon>
             <folder-open-outlined />
@@ -68,7 +68,8 @@ import hex from '@/esptool/utils/hex';
 import type { IState } from '@/types/state';
 
 const props = defineProps<{
-  state: IState,
+  state: IState;
+  acceptExts: string[];
 }>();
 
 const emit = defineEmits<{

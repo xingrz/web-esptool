@@ -8,8 +8,8 @@
   </div>
   <div :class="$style.content">
     <router-view v-slot="{ Component }">
-      <component :is="Component" :state="state" @file="handleFile" @connect="connect" @flash="flash" @reset="reset"
-        @start="oneClick" />
+      <component :is="Component" :state="state" :accept-exts="ACCEPT_EXTS" @file="handleFile" @connect="connect"
+        @flash="flash" @reset="reset" @start="oneClick" />
     </router-view>
   </div>
   <div :class="{ [$style.footer]: true, [$style.inverted]: !advanced && (progress || 0) > 10 }">
@@ -31,10 +31,13 @@ import SonicView from '@/components/SonicView.vue';
 import useTotalProgress from '@/composables/useTotalProgress';
 
 import readZip from '@/unpack/readZip';
+import readUf2 from '@/unpack/readUf2';
 import ESPTool from '@/esptool';
 
 import type { IState } from '@/types/state';
 import type { IESPDevice, IFlashProgress } from '@/esptool';
+
+const ACCEPT_EXTS = ['.zip', '.bin'];
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
@@ -83,6 +86,8 @@ async function handleFile(file: File): Promise<void> {
   const name = file.name.toLocaleLowerCase();
   if (name.endsWith('.zip')) {
     state.flashArgs = await readZip(file);
+  } else if (name.endsWith('.bin')) {
+    state.flashArgs = await readUf2(file);
   }
 
   if (state.flashArgs == null) {
