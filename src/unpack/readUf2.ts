@@ -68,7 +68,6 @@ export default async function readUf2(file: File): Promise<IFlashArgs | null> {
     } else {
       current = {
         address: targetAddr,
-        name: `part_${hex(targetAddr, 4)}.bin`,
         image: data,
       };
       flashArgs.partitions.push(current);

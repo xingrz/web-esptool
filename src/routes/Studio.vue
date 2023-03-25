@@ -26,13 +26,12 @@
     size="small" :scroll="{ y: 300 }" :class="$style.main">
     <template #bodyCell="{ column, record, index }">
       <template v-if="column.key == 'address'">
-        <code>{{ hex(record.address, 4) }}</code>
+        <div><code>{{ hex(record.address, 4) }}</code></div>
+        <div :class="$style.secondary" v-if="record.name"><code>{{ record.name }}</code></div>
       </template>
       <template v-else-if="column.key == 'length'">
-        <code>{{ record.image.length }}</code>
-      </template>
-      <template v-else-if="column.key == 'name'">
-        <code>{{ record.name }}</code>
+        <div><code>{{ record.image.length }} 字节</code></div>
+        <div :class="$style.secondary"><code>{{ formatPartSize(record.image.length) }}</code></div>
       </template>
       <template v-else-if="column.key == 'progress'">
         <a-progress :percent="Math.round(progresses[index] || 0)" size="small" />
@@ -84,7 +83,6 @@ const emit = defineEmits<{
 const columns = [
   { title: '地址', key: 'address' },
   { title: '大小', key: 'length', align: 'right' },
-  { title: '文件', key: 'name' },
   { title: '进度', key: 'progress', width: '150px' },
 ];
 
@@ -119,11 +117,24 @@ const progresses = computed(() => {
     }
   });
 });
+
+function formatPartSize(size: number): string {
+  if (size >= (1 << 20)) {
+    return `${(size / (1 << 20)).toFixed(2)} MB`;
+  } else {
+    return `${(size / (1 << 10)).toFixed(2)} KB`;
+  }
+}
 </script>
 
 <style lang="scss" module>
 .main {
   width: 90%;
   max-width: 800px;
+}
+
+.secondary {
+  color: #00000073;
+  font-size: 90%;
 }
 </style>
