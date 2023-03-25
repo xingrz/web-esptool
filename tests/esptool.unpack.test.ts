@@ -146,6 +146,31 @@ test('unpack(C0 00 01 02 03 C0 | C0 04 05 06 07 C0)', () => {
   expect(queueOut.toString('hex')).toBe(queueExpect.toString('hex'));
 });
 
+test('unpack(C0 00 01 02 03 C0 | CC DD C0 EE FF | C0 04 05 06 07 C0)', () => {
+  const queueIn: Buffer = Buffer.alloc(0);
+
+  const input: Buffer = Buffer.from([
+    0xC0, 0x00, 0x01, 0x02, 0x03, 0xC0,
+    0xCC, 0xDD, 0xC0, 0xEE, 0xFF,
+    0xC0, 0x04, 0x05, 0x06, 0x07, 0xC0,
+  ]);
+
+  const outputExpect: Buffer[] = [
+    Buffer.from([0x00, 0x01, 0x02, 0x03]),
+    Buffer.from([0xCC, 0xDD]),
+    Buffer.from([0xEE, 0xFF]),
+    Buffer.from([0x04, 0x05, 0x06, 0x07]),
+  ];
+
+  const queueExpect: Buffer = Buffer.from([
+  ]);
+
+  const { queue: queueOut, packets: outputActual } = unpack(queueIn, input);
+
+  expect(toHexList(outputActual)).toStrictEqual(toHexList(outputExpect));
+  expect(queueOut.toString('hex')).toBe(queueExpect.toString('hex'));
+});
+
 test('unpack(C0 00 01 02)', () => {
   const queueIn: Buffer = Buffer.alloc(0);
 
@@ -157,7 +182,7 @@ test('unpack(C0 00 01 02)', () => {
   ];
 
   const queueExpect: Buffer = Buffer.from([
-    0xC0, 0x00, 0x01, 0x02,
+    0x00, 0x01, 0x02,
   ]);
 
   const { queue: queueOut, packets: outputActual } = unpack(queueIn, input);
@@ -179,7 +204,7 @@ test('unpack(C0 00 01 02 03 C0 | C0 04 05)', () => {
   ];
 
   const queueExpect: Buffer = Buffer.from([
-    0xC0, 0x04, 0x05,
+    0x04, 0x05,
   ]);
 
   const { queue: queueOut, packets: outputActual } = unpack(queueIn, input);
@@ -209,7 +234,7 @@ test('unpack(C0 00 01 02 03 C0 | C0 04 05 + 06 07 C0)', () => {
   ];
 
   const queue1Expect: Buffer = Buffer.from([
-    0xC0, 0x04, 0x05,
+    0x04, 0x05,
   ]);
 
   const queue2Expect: Buffer = Buffer.from([
