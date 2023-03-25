@@ -106,7 +106,8 @@ export default class ESP8266ROM extends ESPLoader {
       ][flash_size] || 'ESP8285';
       return {
         model: chip_name,
-        revision: 0,
+        chip_version_major: 0,
+        chip_version_minor: 0,
         description: chip_name,
         mac: await this.read_mac(),
         flash_size: flash_size > 0 ? flash_size : undefined,
@@ -115,7 +116,8 @@ export default class ESP8266ROM extends ESPLoader {
     } else {
       return {
         model: 'ESP8266EX',
-        revision: 0,
+        chip_version_major: 0,
+        chip_version_minor: 0,
         description: 'ESP8266EX',
         mac: await this.read_mac(),
         flash_size: undefined,

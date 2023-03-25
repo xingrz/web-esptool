@@ -46,10 +46,13 @@ export default class ESP32C2ROM extends ESP32C3ROM {
     const word1 = await this.read_efuse(this.EFUSE_BLK2, 1);
 
     // EFUSE_BLK2, 54, 3, PKG_VERSION
-    const pkg_version = (word1 >> 22) & 0x07;
+    const pkg_version = (word1 >> 22) & 0x7;
 
-    const si = await this.get_security_info();
-    const chip_revision = si.api_version!;
+    // EFUSE_BLK2, 52, 2, WAFER_VERSION_MAJOR
+    const major_rev = (word1 >> 20) & 0x3;
+
+    // EFUSE_BLK2, 48, 4, WAFER_VERSION_MINOR
+    const minor_rev = (word1 >> 16) & 0xf;
 
     const chip_name = {
       0: 'ESP32-C2',
@@ -58,8 +61,9 @@ export default class ESP32C2ROM extends ESP32C3ROM {
 
     return {
       model: chip_name,
-      revision: chip_revision,
-      description: `${chip_name} (revision ${chip_revision})`,
+      chip_version_major: major_rev,
+      chip_version_minor: minor_rev,
+      description: `${chip_name} (revision v${major_rev}.${minor_rev})`,
       mac: await this.read_mac(),
       flash_size: undefined,
       psram_size: undefined,

@@ -26,7 +26,8 @@ export interface IFlashProgress {
 
 export interface IESPDevice {
   model: string;
-  revision: number;
+  chip_version_major: number;
+  chip_version_minor: number;
   description: string;
   mac: string | undefined;
   flash_size: number | undefined;

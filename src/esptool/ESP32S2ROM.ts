@@ -43,6 +43,14 @@ export default class ESP32S2ROM extends ESP32ROM {
 
   async get_chip_info(): Promise<IESPDevice> {
     const word3 = await this.read_efuse(this.EFUSE_BLK1, 3);
+    const word4 = await this.read_efuse(this.EFUSE_BLK1, 4);
+
+    // EFUSE_BLK1, 114, 2, WAFER_VERSION_MAJOR
+    const major_rev = (word3 >> 18) & 0x3;
+
+    // EFUSE_BLK1, 116, 1, WAFER_VERSION_MINOR msb
+    // EFUSE_BLK1, 132, 3, WAFER_VERSION_MINOR lsb
+    const minor_rev = (((word3 >> 20) & 0x1) << 3) | ((word4 >> 4) & 0x7);
 
     // EFUSE_BLK1, 117, 4, FLASH_VERSION
     const flash_version = (word3 >> 21) & 0xf;
@@ -61,8 +69,9 @@ export default class ESP32S2ROM extends ESP32ROM {
 
     return {
       model: chip_name,
-      revision: 0,
-      description: chip_name,
+      chip_version_major: major_rev,
+      chip_version_minor: minor_rev,
+      description: `${chip_name} (revision v${major_rev}.${minor_rev})`,
       mac: await this.read_mac(),
       flash_size: flash_size,
       psram_size: psram_size,

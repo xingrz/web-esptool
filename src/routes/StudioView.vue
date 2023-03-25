@@ -7,8 +7,8 @@
           <a-button v-else type="primary" :loading="connecting" @click="connect">连接</a-button>
         </a-space>
       </template>
-      <a-descriptions-item label="ECO 版本">
-        {{ state.device?.revision || 'N/A' }}
+      <a-descriptions-item label="芯片版本">
+        {{ state.device ? `v${state.device.chip_version_major}.${state.device.chip_version_minor}` : 'N/A' }}
       </a-descriptions-item>
       <a-descriptions-item label="MAC 地址">
         <code>{{ state.device?.mac || 'N/A' }}</code>

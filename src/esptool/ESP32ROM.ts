@@ -68,23 +68,31 @@ export default class ESP32ROM extends ESPLoader {
     const word3 = await this.read_efuse(this.EFUSE_BLK0, 3);
     const word5 = await this.read_efuse(this.EFUSE_BLK0, 5);
 
-    // EFUSE_BLK0, 98, 1, EFUSE_RD_CHIP_VER_PKG_4BIT
-    // EFUSE_BLK0, 105, 3, EFUSE_RD_CHIP_VER_PKG
+    // EFUSE_BLK0,  98, 1, EFUSE_RD_CHIP_VER_PKG_4BIT most significant bit
+    // EFUSE_BLK0, 105, 3, EFUSE_RD_CHIP_VER_PKG least significant bits
     const pkg_version = (((word3 >> 2) & 0x1) << 3) | ((word3 >> 9) & 0x7);
 
-    const syscon_date = await this.read_reg(this.SYSCON_DATE);
-    const chip_revision = (() => {
+    const major_rev = await (async () => {
+      const syscon_date = await this.read_reg(this.SYSCON_DATE);
+
       // EFUSE_BLK0, 111, 1, EFUSE_RD_CHIP_VER_REV1
       // EFUSE_BLK0, 180, 1, EFUSE_RD_CHIP_VER_REV2
-      const rev_bit0 = (word3 >> 15) & 0x1
-      const rev_bit1 = (word5 >> 20) & 0x1
-      const rev_bit2 = (syscon_date >> 31) & 0x1
-      if (rev_bit2) return 3;
-      if (rev_bit1) return 2;
-      if (rev_bit0) return 1;
-      return 0;
+      const rev_bit0 = (word3 >> 15) & 0x1;
+      const rev_bit1 = (word5 >> 20) & 0x1;
+      const rev_bit2 = (syscon_date >> 31) & 0x1;
+
+      return {
+        0: 0,
+        1: 1,
+        3: 2,
+        7: 3,
+      }[(rev_bit2 << 2) | (rev_bit1 << 1) | rev_bit0] || 0;
     })();
-    const rev3 = (chip_revision == 3);
+
+    // EFUSE_BLK0, 184, 2, WAFER_VERSION_MINOR
+    const minor_rev = (word5 >> 24) & 0x3;
+
+    const rev3 = (major_rev == 3);
 
     // EFUSE_BLK0, 96, 1, FUSE_RD_CHIP_VER_DIS_APP_CPU
     const single_core = (word3 >> 0) & 0x1;
@@ -113,8 +121,9 @@ export default class ESP32ROM extends ESPLoader {
 
     return {
       model: chip_name,
-      revision: chip_revision,
-      description: `${chip_name} (revision ${chip_revision})`,
+      chip_version_major: major_rev,
+      chip_version_minor: minor_rev,
+      description: `${chip_name} (revision v${major_rev}.${minor_rev})`,
       mac: await this.read_mac(),
       flash_size: flash_size,
       psram_size: psram_size,
