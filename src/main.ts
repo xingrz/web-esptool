@@ -17,12 +17,12 @@ app.use(createRouter({
     {
       path: '/',
       name: 'simple',
-      component: () => import('@/routes/Simple.vue'),
+      component: () => import('@/routes/SimpleView.vue'),
     },
     {
       path: '/studio',
       name: 'studio',
-      component: () => import('@/routes/Studio.vue'),
+      component: () => import('@/routes/StudioView.vue'),
     },
   ],
 }));

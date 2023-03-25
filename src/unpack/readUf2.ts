@@ -1,15 +1,10 @@
 import type { IFlashArgs, IFlashPartition } from '@/esptool';
-import hex from '@/esptool/utils/hex';
 
 const MAGIC_FIRST = 0x0A324655;
 const MAGIC_SECOND = 0x9E5D5157;
 const MAGIC_FINAL = 0x0AB16F30;
 
 const FLAG_NOT_MAIN_FLASH = 0x00000001;
-const FLAG_FILE_CONTAINER = 0x00001000;
-const FLAG_FAMILYID_PRESENT = 0x00002000;
-const FLAG_MD5_CHECKSUM_PRESENT = 0x00004000;
-const FLAG_EXTENSION_TAGS_PRESENT = 0x00008000;
 
 export default async function readUf2(file: File): Promise<IFlashArgs | null> {
   const flashArgs = <IFlashArgs>{
