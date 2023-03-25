@@ -9,7 +9,7 @@
   <div :class="$style.content">
     <router-view v-slot="{ Component }">
       <component :is="Component" :state="state" :accept-exts="ACCEPT_EXTS" @file="handleFile" @connect="connect"
-        @flash="flash" @reset="reset" @start="oneClick" />
+        @flash="flash" @reset="reset" @start="oneClick" @clear="clear" />
     </router-view>
   </div>
   <div :class="{ [$style.footer]: true, [$style.inverted]: !advanced && (progress || 0) > 10 }">
@@ -138,13 +138,16 @@ async function reset(): Promise<void> {
 }
 
 async function oneClick(): Promise<void> {
-  state.progress = null;
   if (!await connect()) {
     return;
   }
   await flash(true);
   await esp.close();
   console.log('done');
+}
+
+function clear(): void {
+  state.progress = null;
 }
 
 const progress = useTotalProgress(state);

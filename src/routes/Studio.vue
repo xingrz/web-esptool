@@ -78,6 +78,7 @@ const emit = defineEmits<{
   (e: 'reset'): void;
   (e: 'flash'): void;
   (e: 'start'): void;
+  (e: 'clear'): void;
 }>();
 
 const columns = [
