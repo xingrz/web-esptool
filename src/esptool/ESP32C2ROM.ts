@@ -46,17 +46,14 @@ export default class ESP32C2ROM extends ESP32C3ROM {
     const word1 = await this.read_efuse(this.EFUSE_BLK2, 1);
 
     // EFUSE_BLK2, 54, 3, PKG_VERSION
-    // const pkg_version = (word1 >> 22) & 0x07;
-
-    // FIXME: bit pos of this field is inconsistent between ESP-IDF, espefuse
-    // and esptool. Review it in the future.
-    const pkg_version = 0;
+    const pkg_version = (word1 >> 22) & 0x07;
 
     const si = await this.get_security_info();
     const chip_revision = si.api_version!;
 
     const chip_name = {
       0: 'ESP32-C2',
+      1: 'ESP32-C2',
     }[pkg_version] || 'unknown ESP32-C2';
 
     return {
