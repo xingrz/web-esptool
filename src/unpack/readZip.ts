@@ -5,13 +5,13 @@ import type { IFlashArgs, IFlashMode } from '@/esptool';
 
 const unzip = promisify(_unzip);
 
-export default async function readZip(file: File): Promise<IFlashArgs | null> {
+export default async function readZip(file: File): Promise<IFlashArgs | undefined> {
   const buffer = await file.arrayBuffer();
   const entries = await unzip(new Uint8Array(buffer));
 
   const { dir, content } = findFlashArgs(entries) || {};
   if (!content) {
-    return null;
+    return;
   }
 
   const args = Buffer.from(content)
@@ -48,7 +48,7 @@ export default async function readZip(file: File): Promise<IFlashArgs | null> {
   return flashArgs;
 }
 
-function findFlashArgs(entries: Record<string, Buffer>): { dir: string, content: Buffer } | null {
+function findFlashArgs(entries: Record<string, Buffer>): { dir: string, content: Buffer } | undefined {
   for (const name in entries) {
     if (name.match(/^(.*\/)*flash_args$/)) {
       return {
@@ -57,5 +57,4 @@ function findFlashArgs(entries: Record<string, Buffer>): { dir: string, content:
       };
     }
   }
-  return null;
 }

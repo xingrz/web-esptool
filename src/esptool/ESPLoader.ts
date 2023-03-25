@@ -13,7 +13,6 @@ const RTS = 'requestToSend';
 const USB_JTAG_SERIAL_PID = 0x1001;
 
 const SECURITY_INFO_BYTES_ESP32S2 = 12;
-const SECURITY_INFO_BYTES_ESP32S3_OR_LATER = 20;
 
 interface IResponse {
   val: number;
@@ -325,8 +324,8 @@ export default class ESPLoader {
     this.check(await this.reader.command(Command.ESP_FLASH_DEFL_END, data));
   }
 
-  async load_stub(): Promise<IStub | null> {
-    return null;
+  async load_stub(): Promise<IStub | undefined> {
+    return;
   }
 
   async change_baud(baud: number, oldBaud: number): Promise<void> {

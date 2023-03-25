@@ -6,7 +6,7 @@ const MAGIC_FINAL = 0x0AB16F30;
 
 const FLAG_NOT_MAIN_FLASH = 0x00000001;
 
-export default async function readUf2(file: File): Promise<IFlashArgs | null> {
+export default async function readUf2(file: File): Promise<IFlashArgs | undefined> {
   const flashArgs = <IFlashArgs>{
     partitions: [],
   };
@@ -16,7 +16,7 @@ export default async function readUf2(file: File): Promise<IFlashArgs | null> {
   const image = Buffer.from(await file.arrayBuffer());
   if (image.length < 512 || image.length % 512 != 0) {
     console.error(`Invalid UF2: Invalid file size: ${image.length}`);
-    return null;
+    return;
   }
 
   for (let i = 0; i < image.length; i += 512) {
@@ -24,15 +24,15 @@ export default async function readUf2(file: File): Promise<IFlashArgs | null> {
 
     if (block.readUInt32LE(0) != MAGIC_FIRST) {
       console.error(`Invalid UF2: Invalid first magic of block at offset ${i}`);
-      return null;
+      return;
     }
     if (block.readUInt32LE(4) != MAGIC_SECOND) {
       console.error(`Invalid UF2: Invalid second magic of block at offset ${i}`);
-      return null;
+      return;
     }
     if (block.readUInt32LE(508) != MAGIC_FINAL) {
       console.error(`Invalid UF2: Invalid final magic of block at offset ${i}`);
-      return null;
+      return;
     }
 
     const flags = block.readUInt32LE(8);
@@ -45,7 +45,7 @@ export default async function readUf2(file: File): Promise<IFlashArgs | null> {
     const payloadSize = block.readUInt32LE(16);
     if (payloadSize > 476) {
       console.error(`Invalid UF2: Invalid payloadSize (${payloadSize}) of block at offset ${i}`);
-      return null;
+      return;
     }
 
     // const blockNo = block.readUInt32LE(20);

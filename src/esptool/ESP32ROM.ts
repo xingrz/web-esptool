@@ -35,7 +35,7 @@ export default class ESP32ROM extends ESPLoader {
 
   STUB_CLASS = ESP32StubLoader;
 
-  async load_stub(): Promise<IStub | null> {
+  async load_stub(): Promise<IStub | undefined> {
     const { default: stub } = await import('./stubs/stub_flasher_32.elf');
     return stub;
   }

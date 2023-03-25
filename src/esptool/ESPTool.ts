@@ -39,8 +39,8 @@ const COMPRESS = true;
 
 export default class ESPTool extends EventEmitter {
 
-  serial: SerialPort | null = null;
-  loader: ESPLoader | null = null;
+  serial: SerialPort | undefined;
+  loader: ESPLoader | undefined;
 
   async open(serial: SerialPort): Promise<void> {
     this.serial = serial;
@@ -91,7 +91,7 @@ export default class ESPTool extends EventEmitter {
     } catch (e) {
       console.warn('Failed launching loader', e);
       await this.serial.close();
-      this.serial = null;
+      this.serial = undefined;
       throw e;
     }
   }
@@ -99,17 +99,17 @@ export default class ESPTool extends EventEmitter {
   async close(): Promise<void> {
     if (this.loader) {
       await this.loader.release();
-      this.loader = null;
+      this.loader = undefined;
     }
     if (this.serial) {
       await this.serial.close();
-      this.serial = null;
+      this.serial = undefined;
     }
     this.emit('disconnect');
   }
 
-  async run_stub(serial: SerialPort): Promise<ESPLoader | null> {
-    if (!this.loader) return null;
+  async run_stub(serial: SerialPort): Promise<ESPLoader | undefined> {
+    if (!this.loader) return;
 
     const {
       RAM_WRITE_SIZE,
@@ -117,7 +117,7 @@ export default class ESPTool extends EventEmitter {
 
     const stub = await this.loader.load_stub();
     if (!stub) {
-      return null;
+      return;
     }
 
     console.log('Uploading stub...');

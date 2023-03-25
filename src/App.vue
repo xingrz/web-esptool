@@ -53,10 +53,10 @@ function setAdvanced(value: boolean) {
 
 const state = reactive<IState>({
   stage: 'idle',
-  firmware: null,
-  device: null,
-  flashArgs: null,
-  progress: null,
+  firmware: undefined,
+  device: undefined,
+  flashArgs: undefined,
+  progress: undefined,
 });
 
 const esp = new ESPTool();
@@ -68,7 +68,7 @@ esp.on('connect', (device: IESPDevice) => {
 });
 
 esp.on('disconnect', () => {
-  state.device = null;
+  state.device = undefined;
 });
 
 esp.on('progress', (progress: IFlashProgress) => {
@@ -81,7 +81,7 @@ async function handleFile(file: File): Promise<void> {
     return;
   }
 
-  state.progress = null;
+  state.progress = undefined;
 
   const name = file.name.toLocaleLowerCase();
   if (name.endsWith('.zip')) {
@@ -90,7 +90,7 @@ async function handleFile(file: File): Promise<void> {
     state.flashArgs = await readUf2(file);
   }
 
-  if (state.flashArgs == null) {
+  if (!state.flashArgs) {
     message.error('该文件不是一个合法的固件包');
     return;
   }
@@ -99,7 +99,7 @@ async function handleFile(file: File): Promise<void> {
 }
 
 async function connect(): Promise<boolean> {
-  if (state.device != null) {
+  if (state.device) {
     return true;
   }
   try {
@@ -116,7 +116,7 @@ async function connect(): Promise<boolean> {
 }
 
 async function flash(reset = false): Promise<boolean> {
-  if (state.flashArgs == null) {
+  if (!state.flashArgs) {
     return false;
   }
   try {
@@ -126,7 +126,7 @@ async function flash(reset = false): Promise<boolean> {
   } catch (e) {
     console.error(e);
     message.error('烧录失败');
-    state.progress = null;
+    state.progress = undefined;
     return false;
   } finally {
     state.stage = 'idle';
@@ -147,7 +147,7 @@ async function oneClick(): Promise<void> {
 }
 
 function clear(): void {
-  state.progress = null;
+  state.progress = undefined;
 }
 
 const progress = useTotalProgress(state);
