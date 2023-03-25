@@ -19,7 +19,13 @@ interface IResponse {
   data: Buffer;
 }
 
-export type IStub = Record<string, string | number>;
+export interface IStub {
+  entry: number;
+  text: string;
+  text_start: number;
+  data: string;
+  data_start: number;
+}
 
 export interface ISecurityInfo {
   flags: number;

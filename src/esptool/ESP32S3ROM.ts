@@ -15,7 +15,7 @@ export default class ESP32S3ROM extends ESP32S2ROM {
   STUB_CLASS = ESP32S3StubLoader;
 
   async load_stub(): Promise<IStub | undefined> {
-    const { default: stub } = await import('./stubs/stub_flasher_32s3.elf');
+    const { default: stub } = await import('./stubs/stub_flasher_32s3.json');
     return stub;
   }
 

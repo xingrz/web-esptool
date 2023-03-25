@@ -34,7 +34,7 @@ export default class ESP8266ROM extends ESPLoader {
   STUB_CLASS = ESP8266StubLoader;
 
   async load_stub(): Promise<IStub | undefined> {
-    const { default: stub } = await import('./stubs/stub_flasher_8266.elf');
+    const { default: stub } = await import('./stubs/stub_flasher_8266.json');
     return stub;
   }
 

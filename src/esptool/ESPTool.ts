@@ -1,11 +1,10 @@
 import EventEmitter from 'events';
 import promisify from 'pify';
-import { zlib as _zlib, unzlib as _unzlib } from 'fflate';
+import { zlib as _zlib } from 'fflate';
 
 const zlib = promisify(_zlib);
-const unzlib = promisify(_unzlib);
 
-import ESPLoader from './ESPLoader';
+import ESPLoader, { type IStub } from './ESPLoader';
 import ESP8266ROM from './ESP8266ROM';
 import ESP32ROM from './ESP32ROM';
 import ESP32S2ROM from './ESP32S2ROM';
@@ -121,10 +120,10 @@ export default class ESPTool extends EventEmitter {
     }
 
     console.log('Uploading stub...');
-    for (const field of ['text', 'data']) {
+    for (const field of ['text' as keyof IStub, 'data' as keyof IStub]) {
       if (!stub[field]) continue;
-      const offs = stub[`${field}_start`] as number;
-      const code = await unzlib(Buffer.from(stub[field] as string, 'base64'));
+      const offs = stub[`${field}_start` as keyof IStub] as number;
+      const code = Buffer.from(stub[field] as string, 'base64');
       const blocks = Math.floor((code.length + RAM_WRITE_SIZE - 1) / RAM_WRITE_SIZE);
       await this.loader.mem_begin(code.length, blocks, RAM_WRITE_SIZE, offs);
       for (let seq = 0; seq < blocks; seq++) {
