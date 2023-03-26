@@ -11,6 +11,7 @@ import ESP32S2ROM from './ESP32S2ROM';
 import ESP32S3ROM from './ESP32S3ROM';
 import ESP32C2ROM from './ESP32C2ROM';
 import ESP32C3ROM from './ESP32C3ROM';
+import ESP32C6ROM from './ESP32C6ROM';
 
 import sleep from './utils/sleep';
 import hex from './utils/hex';
@@ -32,6 +33,7 @@ const LOADERS = [
   ESP32S3ROM,
   ESP32C2ROM,
   ESP32C3ROM,
+  ESP32C6ROM,
 ];
 
 const COMPRESS = true;
