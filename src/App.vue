@@ -37,7 +37,7 @@ import ESPTool from '@/esptool';
 import type { IState } from '@/types/state';
 import type { IESPDevice, IFlashProgress } from '@/esptool';
 
-const ACCEPT_EXTS = ['.zip', '.bin'];
+const ACCEPT_EXTS = ['.zip', '.bin', '.uf2'];
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024;
 
@@ -86,7 +86,7 @@ async function handleFile(file: File): Promise<void> {
   const name = file.name.toLocaleLowerCase();
   if (name.endsWith('.zip')) {
     state.flashArgs = await readZip(file);
-  } else if (name.endsWith('.bin')) {
+  } else if (name.endsWith('.uf2') || name == 'uf2.bin') {
     state.flashArgs = await readUf2(file);
   }
 
