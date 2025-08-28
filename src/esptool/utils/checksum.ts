@@ -1,3 +1,5 @@
+import type { Buffer } from 'buffer';
+
 // Initial state for the checksum routine
 const ESP_CHECKSUM_MAGIC = 0xef;
 

@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps, withDefaults } from 'vue';
+import { computed } from 'vue';
 
 const props = withDefaults(defineProps<{
   width?: number;
@@ -69,7 +69,9 @@ function makePath(peak: number): string {
     }
   }
 
-  animation: sonic var(--period) ease-in-out infinite both;
-  transition: transform 700ms ease-in-out;
+  & {
+    animation: sonic var(--period) ease-in-out infinite both;
+    transition: transform 700ms ease-in-out;
+  }
 }
 </style>

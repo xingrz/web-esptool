@@ -1,15 +1,17 @@
-import { defineConfig, splitVendorChunkPlugin } from 'vite';
+import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': resolve('./src'),
     },
   },
   plugins: [
     vue(),
-    splitVendorChunkPlugin(),
   ],
+  build: {
+    chunkSizeWarningLimit: 10 * 1024,
+  },
 });

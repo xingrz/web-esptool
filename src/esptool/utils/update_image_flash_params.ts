@@ -1,3 +1,4 @@
+import type { Buffer } from 'buffer';
 import type { IFlashArgs } from '..';
 
 //First byte of the application image
@@ -9,10 +10,10 @@ export default function update_image_flash_params(address: number, args: IFlashA
     return image;  // not flashing bootloader offset, so don't modify this
   }
 
-  const magic = image[0];
-  let flash_mode = image[2];
-  let flash_freq = image[3] & 0x0F;
-  let flash_size = image[3] & 0xF0;
+  const magic = image[0]!;
+  let flash_mode = image[2]!;
+  let flash_freq = image[3]! & 0x0F;
+  let flash_size = image[3]! & 0xF0;
 
   if (magic != ESP_IMAGE_MAGIC) {
     console.warn(`Warning: Image file at ${address} doesn't look like an image file, so not changing any flash settings.`);

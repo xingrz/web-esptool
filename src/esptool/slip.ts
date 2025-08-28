@@ -1,4 +1,5 @@
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
+import { Buffer } from 'buffer';
 
 import ESPLoader from './ESPLoader';
 
@@ -100,7 +101,7 @@ export default class SlipReader extends EventEmitter {
       try {
         await this.write(out);
         return await once(this, `res:${op}`, timeout) as IResponse;
-      } catch (e) {
+      } catch {
         // ignored
       }
     }

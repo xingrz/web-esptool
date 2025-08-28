@@ -1,4 +1,4 @@
-import type EventEmitter from 'events';
+import type { EventEmitter } from 'events';
 
 export default async function once<T>(emitter: EventEmitter, evt: string, timeout: number): Promise<T> {
   return new Promise((resolve, reject) => {

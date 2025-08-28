@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 import type { IFlashArgs, IFlashPartition } from '@/esptool';
 
 const MAGIC_FIRST = 0x0A324655;

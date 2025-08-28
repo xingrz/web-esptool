@@ -1,3 +1,5 @@
+import type { Buffer } from 'buffer';
+
 import ESPTool from './ESPTool';
 export default ESPTool;
 

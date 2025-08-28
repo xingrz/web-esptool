@@ -1,71 +1,33 @@
 {
   "name": "web-esptool",
-  "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 8080",
     "build": "vite build",
     "test": "jest"
   },
   "dependencies": {
-    "@ant-design/icons-vue": "^6.1.0",
-    "ant-design-vue": "^3.2.0",
-    "buffer": "^5.7.1",
-    "core-js": "^3.22.2",
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.2.6",
+    "buffer": "^6.0.3",
     "events": "^3.3.0",
-    "fflate": "^0.7.3",
-    "pify": "^6.0.0",
-    "vue": "^3.2.33",
-    "vue-router": "^4.1.2"
+    "fflate": "^0.8.2",
+    "pify": "^6.1.0",
+    "vue": "^3.5.20",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@nabla/vite-plugin-eslint": "^1.4.0",
-    "@types/jest": "^28.1.5",
-    "@types/pify": "^5.0.1",
-    "@types/w3c-web-serial": "^1.0.2",
-    "@typescript-eslint/eslint-plugin": "^5.30.6",
-    "@typescript-eslint/parser": "^5.30.6",
-    "@vitejs/plugin-vue": "^2.3.3",
-    "@vue/compiler-sfc": "^3.2.37",
-    "@vue/eslint-config-typescript": "^11.0.0",
-    "@vue/tsconfig": "^0.1.3",
+    "@types/events": "^3.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/w3c-web-serial": "^1.0.8",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
     "elfy": "^1.0.0",
-    "eslint": "^8.19.0",
-    "eslint-plugin-vue": "^9.2.0",
-    "jest": "^28.1.2",
-    "sass": "^1.53.0",
-    "ts-jest": "^28.0.5",
-    "typescript": "^4.7.4",
-    "vite": "^2.9.14"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "browser": true
-    },
-    "extends": [
-      "plugin:vue/vue3-essential",
-      "eslint:recommended",
-      "@vue/typescript/recommended"
-    ],
-    "parserOptions": {
-      "ecmaVersion": 2020
-    },
-    "rules": {
-      "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "no-unused-vars": [
-        "warn",
-        {
-          "args": "none"
-        }
-      ]
-    }
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead",
-    "not ie 11"
-  ]
+    "jest": "^30.1.1",
+    "sass": "^1.91.0",
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
 }

@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 export default function pack(data: Buffer): Buffer {
   const out = Buffer.alloc(data.length * 2 + 2);
   out[0] = 0xC0;
@@ -12,7 +14,7 @@ export default function pack(data: Buffer): Buffer {
       out[oi + 1] = 0xDD;
       oi += 2;
     } else {
-      out[oi] = data[di];
+      out[oi] = data[di]!;
       oi += 1;
     }
   }

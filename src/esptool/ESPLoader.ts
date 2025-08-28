@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 import { Command } from './cmds';
 import SlipReader from './slip';
 
@@ -168,7 +170,7 @@ export default class ESPLoader {
       try {
         await this.sync();
         return true;
-      } catch (e) {
+      } catch {
         await sleep(50);
       }
     }
@@ -189,7 +191,7 @@ export default class ESPLoader {
         } else if (await this._connect_attempt(true)) {
           return true;
         }
-      } catch (e) {
+      } catch {
         // ignored
       }
     }

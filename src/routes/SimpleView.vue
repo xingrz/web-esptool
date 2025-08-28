@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineEmits, defineProps, toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
 import { InboxOutlined, FileZipOutlined } from '@ant-design/icons-vue';
 
 import useTotalProgress from '@/composables/useTotalProgress';

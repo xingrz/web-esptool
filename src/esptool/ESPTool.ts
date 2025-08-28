@@ -1,8 +1,9 @@
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
+import { Buffer } from 'buffer';
 import promisify from 'pify';
-import { zlib as _zlib } from 'fflate';
+import { zlib as _zlib, type AsyncZlibOptions, type FlateCallback } from 'fflate';
 
-const zlib = promisify(_zlib);
+const zlib = promisify<Buffer, [AsyncZlibOptions, FlateCallback]>(_zlib);
 
 import ESPLoader, { type IStub } from './ESPLoader';
 import ESP8266ROM from './ESP8266ROM';
@@ -154,8 +155,8 @@ export default class ESPTool extends EventEmitter {
     } = this.loader;
 
     for (let i = 0; i < args.partitions.length; i++) {
-      const { address } = args.partitions[i];
-      let { image } = args.partitions[i];
+      const { address } = args.partitions[i]!;
+      let { image } = args.partitions[i]!;
       console.log(`Part ${i}: address=${hex(address, 4)} size=${image.length}`);
 
       image = pad_image(image, 4);
@@ -170,7 +171,7 @@ export default class ESPTool extends EventEmitter {
       let blocks;
       if (COMPRESS) {
         const uncsize = image.length;
-        image = await zlib(image, { level: 9 });
+        image = Buffer.from(await zlib(image, { level: 9 }));
         blocks = await this.loader.flash_defl_begin(uncsize, image.length, address);
       } else {
         blocks = await this.loader.flash_begin(image.length, address);

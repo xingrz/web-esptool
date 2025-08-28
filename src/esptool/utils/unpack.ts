@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 export default function unpack(queue: Buffer, data: Buffer): { queue: Buffer, packets: Buffer[] } {
   queue = Buffer.concat([queue, data]);
   const packets = [];
@@ -20,7 +22,7 @@ export default function unpack(queue: Buffer, data: Buffer): { queue: Buffer, pa
       pi += 1;
       qi += 2;
     } else {
-      packet[pi] = queue[qi];
+      packet[pi] = queue[qi]!;
       pi += 1;
       qi += 1;
     }
