@@ -13,7 +13,7 @@
     </router-view>
   </div>
   <div :class="{ [$style.footer]: true, [$style.inverted]: !advanced && (progress || 0) > 10 }">
-    <span>© 2021-2023 XiNGRZ</span>
+    <span>© 2021-2025 XiNGRZ</span>
     <a-divider type="vertical" />
     <a href="https://github.com/xingrz/web-esptool">Fork me on GitHub</a>
     <a-divider type="vertical" />
