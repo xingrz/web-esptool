@@ -10,6 +10,17 @@ export default async function readZip(file: File): Promise<IFlashArgs | undefine
   const buffer = await file.arrayBuffer();
   const entries = await unzip(new Uint8Array(buffer));
 
+  const flashArgs: IFlashArgs = {
+    flashMode: 'qio',
+    partitions: [],
+  };
+
+  const merged = findMergedBinary(entries);
+  if (merged) {
+    flashArgs.partitions.push({ address: 0, ...merged });
+    return flashArgs;
+  }
+
   const { dir, content } = findFlashArgs(entries) || {};
   if (!content) {
     return;
@@ -21,11 +32,6 @@ export default async function readZip(file: File): Promise<IFlashArgs | undefine
     .split(' ')
     .map(i => i.trim())
     .filter(i => !!i);
-
-  const flashArgs: IFlashArgs = {
-    flashMode: 'qio',
-    partitions: [],
-  };
 
   const prefix = dir ? `${dir}/` : '';
   for (let i = 0; i < args.length - 1; i++) {
@@ -55,6 +61,17 @@ function findFlashArgs(entries: Unzipped): { dir: string, content: Buffer } | un
       return {
         dir: RegExp.$1,
         content: Buffer.from(entries[name]!),
+      };
+    }
+  }
+}
+
+function findMergedBinary(entries: Unzipped): { name: string, image: Buffer } | undefined {
+  for (const name in entries) {
+    if (name.match(/^(.*\/)*merged-binary.*\.bin$/)) {
+      return {
+        name,
+        image: Buffer.from(entries[name]!),
       };
     }
   }

@@ -32,6 +32,7 @@ import useTotalProgress from '@/composables/useTotalProgress';
 
 import readZip from '@/unpack/readZip';
 import readUf2 from '@/unpack/readUf2';
+import readBin from './unpack/readBin';
 import ESPTool from '@/esptool';
 
 import type { IState } from '@/types/state';
@@ -88,6 +89,8 @@ async function handleFile(file: File): Promise<void> {
     state.flashArgs = await readZip(file);
   } else if (name.endsWith('.uf2') || name == 'uf2.bin') {
     state.flashArgs = await readUf2(file);
+  } else if (name.endsWith('.bin')) {
+    state.flashArgs = await readBin(file);
   }
 
   if (!state.flashArgs) {
