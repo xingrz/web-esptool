@@ -86,7 +86,7 @@ function handleClear(): void {
 .main {
   width: 90%;
   height: 200px;
-  max-width: 400px;
+  max-width: 800px;
 }
 
 .upload {
@@ -99,6 +99,9 @@ function handleClear(): void {
 
   .file {
     font-family: monospace;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding: 0 16px;
   }
 }
 
