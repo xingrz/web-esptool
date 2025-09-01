@@ -1,5 +1,12 @@
 import { Buffer } from 'buffer';
 
+import {
+  ClassicReset,
+  DEFAULT_RESET_DELAY_MS,
+  HardReset,
+  USBJTAGSerialReset,
+  type ResetStrategy,
+} from './reset';
 import { Command } from './cmds';
 import SlipReader from './slip';
 
@@ -7,9 +14,6 @@ import sleep from './utils/sleep';
 import checksum from './utils/checksum';
 
 import type { IESPDevice } from '.';
-
-const DTR = 'dataTerminalReady';
-const RTS = 'requestToSend';
 
 // Device PIDs
 const USB_JTAG_SERIAL_PID = 0x1001;
@@ -59,8 +63,6 @@ export default class ESPLoader {
   port: SerialPort;
   reader: SlipReader;
 
-  usb_jtag_serial = false;
-
   STUB_CLASS?: { new(port: SerialPort): ESPLoader };
 
   constructor(port: SerialPort) {
@@ -105,66 +107,8 @@ export default class ESPLoader {
     return val;
   }
 
-  private async _bootloader_reset(esp32r0_delay = false): Promise<void> {
-    // esp32r0_delay is a workaround for bugs with the most common auto reset
-    // circuit and Windows, if the EN pin on the dev board does not have
-    // enough capacitance.
-    //
-    // Newer dev boards shouldn't have this problem (higher value capacitor
-    // on the EN pin), and ESP32 revision 1 can't use this workaround as it
-    // relies on a silicon bug.
-    //
-    // Details: https://github.com/espressif/esptool/issues/136
-
-    // IO0 = HIGH
-    // EN = LOW, chip in reset
-    await this.port?.setSignals({ [DTR]: false, [RTS]: true });
-
-    await sleep(100);
-    if (esp32r0_delay) {
-      // Some chips are more likely to trigger the esp32r0
-      // watchdog reset silicon bug if they're held with EN=LOW
-      // for a longer period
-      await sleep(1200);
-    }
-
-    // IO0 = LOW
-    // EN = HIGH, chip out of reset
-    await this.port?.setSignals({ [DTR]: true, [RTS]: false });
-
-    if (esp32r0_delay) {
-      // Sleep longer after reset.
-      // This workaround only works on revision 0 ESP32 chips,
-      // it exploits a silicon bug spurious watchdog reset.
-      await sleep(400);  // allow watchdog reset to occur
-    }
-    await sleep(50);
-
-    // IO0 = HIGH, done
-    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
-  }
-
-  private async _bootloader_reset_usb(): Promise<void> {
-    // Set IO0
-    await this.port?.setSignals({ [DTR]: true, [RTS]: false });
-
-    await sleep(100);
-
-    // Reset. Note dtr/rts calls inverted so we go through (1,1) instead of (0,0)
-    await this.port?.setSignals({ [DTR]: false, [RTS]: true });
-
-    await sleep(100);
-
-    // Done
-    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
-  }
-
-  private async _connect_attempt(esp32r0_delay = false): Promise<boolean> {
-    if (this.usb_jtag_serial) {
-      await this._bootloader_reset_usb();
-    } else {
-      await this._bootloader_reset(esp32r0_delay);
-    }
+  private async _connect_attempt(reset_strategy: ResetStrategy): Promise<boolean> {
+    await reset_strategy.reset();
 
     for (let i = 0; i < 5; i++) {
       try {
@@ -178,21 +122,29 @@ export default class ESPLoader {
     return false;
   }
 
-  async connect(attempts = 7): Promise<boolean> {
+  private _construct_reset_strategy_sequence(): ResetStrategy[] {
     if (this.port?.getInfo()?.usbProductId == USB_JTAG_SERIAL_PID) {
-      this.usb_jtag_serial = true;
       console.log('Detected integrated USB Serial/JTAG');
+      return [new USBJTAGSerialReset(this.port)];
     }
 
-    for (let i = 0; i < attempts; i++) {
-      try {
-        if (await this._connect_attempt(false)) {
-          return true;
-        } else if (await this._connect_attempt(true)) {
-          return true;
+    return [
+      new ClassicReset(this.port, DEFAULT_RESET_DELAY_MS),
+      new ClassicReset(this.port, DEFAULT_RESET_DELAY_MS + 500),
+    ];
+  }
+
+  async connect(attempts = 7): Promise<boolean> {
+    const reset_sequence = this._construct_reset_strategy_sequence();
+    for (const reset_strategy of reset_sequence) {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          if (await this._connect_attempt(reset_strategy)) {
+            return true;
+          }
+        } catch {
+          // ignored
         }
-      } catch {
-        // ignored
       }
     }
 
@@ -346,9 +298,7 @@ export default class ESPLoader {
   }
 
   async hard_reset(): Promise<void> {
-    await this.port?.setSignals({ [DTR]: false, [RTS]: true });  // EN->LOW
-    await sleep(100);
-    await this.port?.setSignals({ [DTR]: false, [RTS]: false });
+    await (new HardReset(this.port)).reset();
   }
 
 }

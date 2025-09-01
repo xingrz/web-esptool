@@ -88,6 +88,7 @@ export default class ESPTool extends EventEmitter {
       await sleep(100);
       await this.loader.release();
       await this.serial.close();
+      await sleep(50);
       await this.serial.open({ baudRate: BAUD_RATE_BOOST });
       this.loader.start();
     } catch (e) {
